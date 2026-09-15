@@ -62,19 +62,21 @@ export function MapView({
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
+  const [guideOpen, setGuideOpen] = useState(false)
+
+  const visibleReports = useMemo(
+    () => reports.filter((r) => !r.hidden),
+    [reports],
+  )
 
   const filtered = useMemo(() => {
-    const cutoff =
-      timeFilter === 'all'
-        ? null
-        : daysAgo(Number(timeFilter))
-    return reports.filter((r) => {
-      if (r.hidden) return false
+    const cutoff = timeFilter === 'all' ? null : daysAgo(Number(timeFilter))
+    return visibleReports.filter((r) => {
       if (catFilter !== 'all' && !catFilter.has(r.category)) return false
       if (cutoff && new Date(r.created_at) < cutoff) return false
       return true
     })
-  }, [reports, catFilter, timeFilter])
+  }, [visibleReports, catFilter, timeFilter])
 
   const cells = useMemo(() => {
     const map = new Map<string, Cell>()
@@ -94,7 +96,6 @@ export function MapView({
       }
       cell.reports.push(r)
       cell.heat += roleWeight(r.reporter_role)
-      // Dominant category by count
       const counts = new Map<string, number>()
       for (const x of cell.reports) counts.set(x.category, (counts.get(x.category) ?? 0) + 1)
       let best = cell.reports[0].category
@@ -115,7 +116,6 @@ export function MapView({
     selected && petitions.find((p) => p.grid_key === selected.key)?.count
 
   useEffect(() => {
-    // Fix default marker icons path issue if any markers used later
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl
   }, [])
@@ -149,47 +149,64 @@ export function MapView({
     setTimeout(() => setToast(null), 2500)
   }
 
+  const summary = t.map.spotsSummary.replace('{count}', String(cells.length))
+
+  const guide = (
+    <>
+      <MapGuide
+        reports={visibleReports}
+        active={catFilter}
+        onToggle={toggleCat}
+        onClearFilter={() => setCatFilter('all')}
+        onGoReport={() => onGoReport?.()}
+      />
+      <div className="panel time-filters">
+        <h2>{t.map.timeRange}</h2>
+        <div className="chip-row">
+          {(
+            [
+              ['7', t.map.days7],
+              ['30', t.map.days30],
+              ['90', t.map.days90],
+              ['all', t.map.allTime],
+            ] as const
+          ).map(([v, label]) => (
+            <button
+              key={v}
+              type="button"
+              className={timeFilter === v ? 'chip on' : 'chip'}
+              onClick={() => setTimeFilter(v)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <p className="hint">{t.map.tapHint}</p>
+      </div>
+    </>
+  )
+
   return (
     <div className={`map-layout ${pickMode ? 'pick-mode' : ''}`}>
-      {!pickMode && (
-        <div className="map-side">
-          <MapGuide
-            reports={reports}
-            active={catFilter}
-            onToggle={toggleCat}
-            onClearFilter={() => setCatFilter('all')}
-            onGoReport={() => onGoReport?.()}
-          />
-          <div className="panel time-filters">
-            <h2>{t.map.timeRange}</h2>
-            <div className="chip-row">
-              {(
-                [
-                  ['7', t.map.days7],
-                  ['30', t.map.days30],
-                  ['90', t.map.days90],
-                  ['all', t.map.allTime],
-                ] as const
-              ).map(([v, label]) => (
-                <button
-                  key={v}
-                  type="button"
-                  className={timeFilter === v ? 'chip on' : 'chip'}
-                  onClick={() => setTimeFilter(v)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            <p className="hint">{t.map.tapHint}</p>
-          </div>
-        </div>
-      )}
+      {!pickMode && <div className="map-side map-side-desktop">{guide}</div>}
 
       <div className="map-stage">
+        {!pickMode && (
+          <div className="map-chrome">
+            <p className="map-chrome-summary">{summary}</p>
+            <button
+              type="button"
+              className="map-chrome-btn"
+              onClick={() => setGuideOpen(true)}
+            >
+              {t.map.openGuide}
+            </button>
+          </div>
+        )}
+
         <MapContainer
           center={[-26.1, 28.22]}
-          zoom={pickMode ? 12 : 6}
+          zoom={pickMode ? 12 : 10}
           className="leaflet-root"
           scrollWheelZoom
         >
@@ -202,11 +219,11 @@ export function MapView({
             <CircleMarker
               key={cell.key}
               center={[cell.lat, cell.lng]}
-              radius={Math.min(8 + cell.heat * 3, 28)}
+              radius={Math.min(10 + cell.heat * 3, 28)}
               pathOptions={{
                 color: cell.primaryColor,
                 fillColor: cell.primaryColor,
-                fillOpacity: 0.65,
+                fillOpacity: 0.72,
                 weight: 2,
               }}
               eventHandlers={{
@@ -215,6 +232,7 @@ export function MapView({
                     onPick(cell.lat, cell.lng)
                     return
                   }
+                  setGuideOpen(false)
                   setSelectedKey(cell.key)
                 },
               }}
@@ -224,10 +242,14 @@ export function MapView({
             <CircleMarker
               center={[pickLat, pickLng]}
               radius={10}
-              pathOptions={{ color: '#0f766e', fillColor: '#14b8a6', fillOpacity: 0.9 }}
+              pathOptions={{ color: '#5c2d91', fillColor: '#7348a8', fillOpacity: 0.9 }}
             />
           ) : null}
         </MapContainer>
+
+        {!pickMode && !selected && (
+          <p className="map-tap-hint">{t.map.tapSpot}</p>
+        )}
 
         {selected && !pickMode ? (
           <CellDetail
@@ -238,6 +260,21 @@ export function MapView({
           />
         ) : null}
         {toast ? <div className="toast">{toast}</div> : null}
+
+        {guideOpen && !pickMode ? (
+          <div className="map-sheet" role="dialog" aria-label={t.map.openGuide}>
+            <div className="map-sheet-scrim" onClick={() => setGuideOpen(false)} />
+            <div className="map-sheet-panel">
+              <div className="map-sheet-bar">
+                <strong>{t.map.openGuide}</strong>
+                <button type="button" className="linkish" onClick={() => setGuideOpen(false)}>
+                  {t.map.closeGuide}
+                </button>
+              </div>
+              <div className="map-sheet-body">{guide}</div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   )

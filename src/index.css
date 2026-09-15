@@ -245,40 +245,43 @@ a {
 .emergency-strip {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
-  padding: 0.85rem 1.1rem 1rem;
+  gap: 0.45rem;
+  padding: 0.45rem 0.75rem 0.55rem;
   background: linear-gradient(180deg, #2a1248 0%, #3b1a62 100%);
   color: #faf7ff;
-  border-bottom: 2px solid #5c2d91;
+  border-bottom: 1px solid #5c2d91;
 }
 
-.emergency-head {
+.emergency-row {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.65rem 1rem;
-  align-items: flex-start;
+  gap: 0.5rem;
+  align-items: center;
   justify-content: space-between;
 }
 
 .emergency-title-block {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.05rem;
   min-width: 0;
 }
 
 .emergency-title {
   font-family: var(--font-display);
-  font-size: clamp(1.05rem, 2.8vw, 1.35rem);
+  font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.15;
 }
 
 .emergency-lead {
-  font-size: 0.82rem;
-  color: rgba(250, 247, 255, 0.72);
+  font-size: 0.68rem;
+  color: rgba(250, 247, 255, 0.68);
   font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 70vw;
 }
 
 .emergency-toggle {
@@ -286,54 +289,66 @@ a {
   background: rgba(255, 255, 255, 0.08);
   color: #faf7ff;
   border-radius: 999px;
-  padding: 0.4rem 0.85rem;
+  padding: 0.28rem 0.65rem;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   cursor: pointer;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .emergency-toggle:hover {
   background: rgba(255, 255, 255, 0.14);
 }
 
-.emergency-links {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.5rem;
+.emergency-chips {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  overflow-x: auto;
+  padding-bottom: 0.1rem;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
-.emergency-pill {
-  display: flex;
+.emergency-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.emergency-chip {
+  display: inline-flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.65rem 0.75rem;
-  border-radius: 14px;
+  gap: 0;
+  padding: 0.28rem 0.55rem;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   color: #faf7ff;
   text-decoration: none;
-  transition: background 0.15s ease;
+  flex-shrink: 0;
+  min-width: auto;
 }
 
-.emergency-pill:hover {
+.emergency-chip:hover {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
 }
 
-.emergency-pill-label {
-  font-size: 0.72rem;
-  letter-spacing: 0.04em;
+.emergency-chip-label {
+  font-size: 0.58rem;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
-  opacity: 0.78;
+  opacity: 0.75;
   font-weight: 600;
+  line-height: 1.2;
 }
 
-.emergency-pill-num {
+.emergency-chip-num {
   font-family: var(--font-display);
-  font-size: 1.05rem;
+  font-size: 0.82rem;
   font-weight: 800;
   letter-spacing: 0.01em;
+  line-height: 1.2;
 }
 
 .emergency-label {
@@ -466,6 +481,46 @@ a {
 .map-stage {
   position: relative;
   min-height: 320px;
+  display: flex;
+  flex-direction: column;
+}
+
+.map-chrome {
+  display: none;
+}
+
+.map-tap-hint {
+  display: none;
+}
+
+.map-sheet {
+  display: none;
+}
+
+.cell-meta {
+  margin: 0 0 0.5rem;
+  font-size: 0.88rem;
+}
+
+.cell-meta-label {
+  display: block;
+  margin: 0.35rem 0 0.25rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.cat-counts li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.cat-counts li .legend-count {
+  margin-left: auto;
 }
 
 .leaflet-root {
@@ -976,17 +1031,119 @@ a {
 
   .map-layout {
     grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    grid-template-rows: 1fr;
+    height: 100%;
   }
 
-  .map-side {
-    border-right: none;
+  .map-side-desktop {
+    display: none;
+  }
+
+  .map-stage {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .map-chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.65rem;
+    background: rgba(255, 253, 251, 0.94);
     border-bottom: 1px solid var(--line);
-    max-height: 32vh;
+    z-index: 400;
+  }
+
+  .map-chrome-summary {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--purple-deep);
+  }
+
+  .map-chrome-btn {
+    border: 1px solid var(--line);
+    background: var(--purple-soft);
+    color: var(--purple-deep);
+    border-radius: 999px;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .map-tap-hint {
+    display: block;
+    position: absolute;
+    left: 50%;
+    bottom: 0.85rem;
+    transform: translateX(-50%);
+    z-index: 450;
+    margin: 0;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    background: rgba(36, 24, 51, 0.82);
+    color: #faf7ff;
+    font-size: 0.72rem;
+    font-weight: 600;
+    pointer-events: none;
+    max-width: 90%;
+    text-align: center;
+  }
+
+  .map-sheet {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 700;
+  }
+
+  .map-sheet-scrim {
+    position: absolute;
+    inset: 0;
+    background: rgba(20, 10, 36, 0.45);
+  }
+
+  .map-sheet-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    max-height: 78%;
+    background: var(--panel-solid);
+    border-radius: 18px 18px 0 0;
+    box-shadow: 0 -12px 40px rgba(59, 26, 98, 0.18);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .map-sheet-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.85rem 1rem 0.5rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .map-sheet-body {
+    overflow: auto;
+    padding: 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .map-sheet-body .panel {
+    box-shadow: none;
   }
 
   .leaflet-root {
-    min-height: calc(48vh - 0.5rem);
+    flex: 1;
+    min-height: 0;
+    height: 100%;
   }
 
   .cell-detail {
@@ -994,11 +1151,30 @@ a {
     right: 0.7rem;
     width: auto;
     bottom: 0.7rem;
-    max-height: 48%;
+    max-height: 52%;
+    z-index: 650;
   }
 
   .intro-content {
     max-width: none;
+  }
+
+  .topbar {
+    padding: 0.55rem 0.75rem;
+  }
+}
+
+@media (min-width: 861px) {
+  .map-chrome {
+    display: none !important;
+  }
+
+  .map-tap-hint {
+    display: none !important;
+  }
+
+  .map-sheet {
+    display: none !important;
   }
 }
 

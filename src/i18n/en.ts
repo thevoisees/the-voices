@@ -1,6 +1,6 @@
 export const en = {
   appName: 'The Voices',
-  tagline: 'Places and patterns — not names',
+  tagline: 'Places and patterns',
   intro: {
     eyebrow: 'South Africa',
     line: 'Silence protects the wrong people. Your place on the map can protect someone still breathing.',
@@ -50,6 +50,12 @@ export const en = {
     reports: 'reports',
     heatNote: 'Spots grow stronger when the person it happened to reports.',
     loading: 'Loading map…',
+    spotsSummary: '{count} spots on the map',
+    openGuide: 'What’s on the map',
+    closeGuide: 'Close',
+    tapSpot: 'Tap a coloured spot to see what was reported there',
+    spotWhen: 'When',
+    spotType: 'Type',
   },
   report: {
     title: 'Anonymous report',

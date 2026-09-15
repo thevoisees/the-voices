@@ -2,7 +2,7 @@ import type { Dict } from './en'
 
 export const st: Dict = {
   appName: 'The Voices',
-  tagline: 'Dibaka le mekhoa — eseng ebitso',
+  tagline: 'Dibaka le mekhoa',
   intro: {
     eyebrow: 'Afrika Borwa',
     line: 'Ho khutsa ho sireletsa batho ba fosahetseng. Sebaka sa hau mapeng se ka sireletsa motho ea ntseng a phela.',
@@ -52,6 +52,12 @@ export const st: Dict = {
     reports: 'litlaleho',
     heatNote: 'Libaka li matla ha motho eo e mo etsahetseng a tlaleha.',
     loading: 'E a jarisa…',
+    spotsSummary: 'Libaka tse {count} mapeng',
+    openGuide: 'Se mapeng',
+    closeGuide: 'Koala',
+    tapSpot: 'Tobetsa sebaka ho bona se tlalehiloeng',
+    spotWhen: 'Neng',
+    spotType: 'Mofuta',
   },
   report: {
     title: 'Tlaleho e sa tsejoeng',

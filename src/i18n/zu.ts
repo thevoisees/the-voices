@@ -2,7 +2,7 @@ import type { Dict } from './en'
 
 export const zu: Dict = {
   appName: 'The Voices',
-  tagline: 'Izindawo namaphethini — hhayi amagama',
+  tagline: 'Izindawo namaphethini',
   intro: {
     eyebrow: 'iNingizimu Afrika',
     line: 'Ukuthula kuvikela abantu abangalungile. Indawo yakho emephini ingavikela othile osaphila.',
@@ -52,6 +52,12 @@ export const zu: Dict = {
     reports: 'imibiko',
     heatNote: 'Amabala aba namandla uma obhekene nako ebika.',
     loading: 'Iyalayisha…',
+    spotsSummary: 'Amabala angu-{count} emephini',
+    openGuide: 'Okumephini',
+    closeGuide: 'Vala',
+    tapSpot: 'Thepha ibala ukuze ubone okubikiwe',
+    spotWhen: 'Nini',
+    spotType: 'Uhlobo',
   },
   report: {
     title: 'Umbiko ongaziwa',

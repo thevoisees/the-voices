@@ -1,4 +1,4 @@
-import { CATEGORY_MAP, roleWeight } from '../data/categories'
+import { CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
 import type { Report } from '../types'
@@ -16,16 +16,22 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
 
   const key = gridKey(reports[0].grid_lat, reports[0].grid_lng)
   const byCat = new Map<string, number>()
-  let heat = 0
   for (const r of reports) {
     byCat.set(r.category, (byCat.get(r.category) ?? 0) + 1)
-    heat += roleWeight(r.reporter_role)
   }
 
   const publicOnes = reports.filter((r) => {
     const meta = CATEGORY_MAP[r.category]
     return meta.publicText && !meta.countOnly && !r.involves_minor && (r.what_happened || r.red_flag)
   })
+
+  const dates = [
+    ...new Set(
+      reports
+        .map((r) => r.incident_date || r.created_at.slice(0, 10))
+        .filter(Boolean),
+    ),
+  ].sort()
 
   return (
     <div className="cell-detail panel" role="dialog" aria-label={key}>
@@ -37,6 +43,14 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
           ×
         </button>
       </div>
+
+      {dates.length > 0 ? (
+        <p className="cell-meta">
+          <span className="cell-meta-label">{t.map.spotWhen}</span> {dates.join(' · ')}
+        </p>
+      ) : null}
+
+      <p className="cell-meta-label">{t.map.spotType}</p>
       <ul className="cat-counts">
         {[...byCat.entries()].map(([cat, n]) => (
           <li key={cat}>
@@ -44,11 +58,12 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
               className="swatch"
               style={{ background: CATEGORY_MAP[cat as Report['category']].color }}
             />
-            {t.categories[cat as keyof typeof t.categories]}: {n}
+            {t.categories[cat as keyof typeof t.categories]}
+            <span className="legend-count">{n}</span>
           </li>
         ))}
       </ul>
-      <p className="hint">Heat weight: {heat.toFixed(1)}</p>
+
       {publicOnes.length > 0 ? (
         <ul className="snippets">
           {publicOnes.slice(0, 5).map((r) => (
@@ -64,6 +79,7 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
       ) : (
         <p className="hint">{t.map.noText}</p>
       )}
+
       <p className="petition-line">
         {t.map.petitioned}: <strong>{petitionCount}</strong>
       </p>
