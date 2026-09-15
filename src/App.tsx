@@ -8,9 +8,11 @@ import { Notebook } from './components/Notebook'
 import { ReportForm } from './components/ReportForm'
 import { Statistics } from './components/Statistics'
 import { getDict, I18nContext } from './i18n'
+import { fetchMissingPeople } from './lib/missing'
 import { fetchPetitions } from './lib/petitions'
 import { fetchReports } from './lib/reports'
 import type { Lang, Petition, Report, Screen } from './types'
+import type { MissingPerson } from './types-missing'
 
 const LANG_KEY = 'thevoices_lang'
 const ENTERED_KEY = 'thevoices_entered'
@@ -24,6 +26,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('map')
   const [reports, setReports] = useState<Report[]>([])
   const [petitions, setPetitions] = useState<Petition[]>([])
+  const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([])
   const [loading, setLoading] = useState(true)
 
   const t = useMemo(() => getDict(lang), [lang])
@@ -33,11 +36,21 @@ export default function App() {
     localStorage.setItem(LANG_KEY, l)
   }
 
+  const refreshMissing = useCallback(async () => {
+    const m = await fetchMissingPeople()
+    setMissingPeople(m)
+  }, [])
+
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [r, p] = await Promise.all([fetchReports(), fetchPetitions()])
+    const [r, p, m] = await Promise.all([
+      fetchReports(),
+      fetchPetitions(),
+      fetchMissingPeople(),
+    ])
     setReports(r)
     setPetitions(p)
+    setMissingPeople(m)
     setLoading(false)
   }, [])
 
@@ -67,6 +80,8 @@ export default function App() {
                   reports={reports}
                   petitions={petitions}
                   onPetitionsChange={setPetitions}
+                  missingPeople={missingPeople}
+                  onMissingChange={() => void refreshMissing()}
                   onGoReport={() => setScreen('report')}
                 />
               ))}
@@ -77,7 +92,9 @@ export default function App() {
                 }}
               />
             )}
-            {screen === 'stats' && <Statistics reports={reports} />}
+            {screen === 'stats' && (
+              <Statistics reports={reports} missingPeople={missingPeople} />
+            )}
             {screen === 'notebook' && <Notebook />}
             {screen === 'about' && <About />}
           </main>

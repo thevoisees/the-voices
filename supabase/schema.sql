@@ -77,3 +77,68 @@ values
   (-26.1216, 28.2256, 'body_dump', 'other', 'woman', 'evening', '2026-09-12', false, false),
   (-25.9584, 28.2176, 'body_dump', 'other', 'woman', 'morning', '2026-09-14', false, false)
 on conflict do nothing;
+
+-- Missing persons board (names + photos allowed here only)
+create table if not exists public.missing_people (
+  id uuid primary key,
+  created_at timestamptz not null default now(),
+  name text not null,
+  photo text not null,
+  gender text null,
+  age_note text null,
+  last_seen_place text not null,
+  last_seen_date date null,
+  grid_lat double precision null,
+  grid_lng double precision null,
+  description text null,
+  contact_note text null,
+  status text not null default 'missing'
+    check (status in ('missing', 'found_alive', 'found_dead')),
+  verify_alive integer not null default 0,
+  verify_dead integer not null default 0,
+  hidden boolean not null default false
+);
+
+create table if not exists public.missing_found_votes (
+  person_id uuid not null references public.missing_people(id) on delete cascade,
+  device_id text not null,
+  outcome text not null check (outcome in ('alive', 'dead')),
+  created_at timestamptz not null default now(),
+  primary key (person_id, device_id)
+);
+
+alter table public.missing_people enable row level security;
+alter table public.missing_found_votes enable row level security;
+
+create policy "Public read missing people"
+  on public.missing_people for select
+  to anon, authenticated
+  using (hidden = false);
+
+create policy "Public insert missing people"
+  on public.missing_people for insert
+  to anon, authenticated
+  with check (true);
+
+create policy "Public update missing people"
+  on public.missing_people for update
+  to anon, authenticated
+  using (true)
+  with check (true);
+
+create policy "Public read missing votes"
+  on public.missing_found_votes for select
+  to anon, authenticated
+  using (true);
+
+create policy "Public insert missing votes"
+  on public.missing_found_votes for insert
+  to anon, authenticated
+  with check (true);
+
+create policy "Public upsert missing votes"
+  on public.missing_found_votes for update
+  to anon, authenticated
+  using (true)
+  with check (true);
+

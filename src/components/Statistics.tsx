@@ -3,9 +3,11 @@ import { CATEGORIES, CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
 import type { AffectedGender, Report, TimeBand } from '../types'
+import type { MissingPerson } from '../types-missing'
 
 type Props = {
   reports: Report[]
+  missingPeople: MissingPerson[]
 }
 
 const GENDERS: AffectedGender[] = ['woman', 'man', 'girl', 'boy', 'unknown']
@@ -60,7 +62,7 @@ function BarRow({
   )
 }
 
-export function Statistics({ reports }: Props) {
+export function Statistics({ reports, missingPeople }: Props) {
   const { t } = useI18n()
 
   const summary = useMemo(() => {
@@ -82,6 +84,10 @@ export function Statistics({ reports }: Props) {
         .filter((x): x is TimeBand => Boolean(x)),
     )
 
+    const stillMissing = missingPeople.filter((p) => p.status === 'missing').length
+    const foundAlive = missingPeople.filter((p) => p.status === 'found_alive').length
+    const foundDead = missingPeople.filter((p) => p.status === 'found_dead').length
+
     const catMax = Math.max(1, ...[...byCat.values()])
     const genderMax = Math.max(1, ...[...byGender.values()])
     const timeMax = Math.max(1, ...[...byTime.values()])
@@ -97,8 +103,12 @@ export function Statistics({ reports }: Props) {
       catMax,
       genderMax,
       timeMax,
+      stillMissing,
+      foundAlive,
+      foundDead,
+      missingTotal: missingPeople.length,
     }
-  }, [reports])
+  }, [reports, missingPeople])
 
   const timeLabels: Record<TimeBand, string> = {
     morning: t.report.morning,
@@ -133,6 +143,25 @@ export function Statistics({ reports }: Props) {
             <span className="stats-kpi-l">{t.stats.womenGirls}</span>
           </div>
         </div>
+
+        <section className="panel stats-section">
+          <h2>{t.stats.missingTitle}</h2>
+          <p className="hint">{t.stats.missingLead}</p>
+          <div className="stats-kpis stats-kpis-missing">
+            <div className="stats-kpi">
+              <span className="stats-kpi-n">{summary.stillMissing}</span>
+              <span className="stats-kpi-l">{t.stats.stillMissing}</span>
+            </div>
+            <div className="stats-kpi">
+              <span className="stats-kpi-n">{summary.foundAlive}</span>
+              <span className="stats-kpi-l">{t.stats.foundAlive}</span>
+            </div>
+            <div className="stats-kpi">
+              <span className="stats-kpi-n">{summary.foundDead}</span>
+              <span className="stats-kpi-l">{t.stats.foundDead}</span>
+            </div>
+          </div>
+        </section>
 
         <section className="panel stats-section">
           <h2>{t.stats.byGender}</h2>

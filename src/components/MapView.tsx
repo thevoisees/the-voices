@@ -6,8 +6,11 @@ import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
 import { signPetition } from '../lib/petitions'
 import type { CategoryId, Petition, Report } from '../types'
+import type { MissingPerson } from '../types-missing'
 import { CellDetail } from './CellDetail'
 import { MapGuide } from './MapGuide'
+import { MissingBoard } from './MissingBoard'
+import { MissingStrip } from './MissingStrip'
 import 'leaflet/dist/leaflet.css'
 
 type TimeFilter = '7' | '30' | '90' | 'all'
@@ -16,6 +19,8 @@ type Props = {
   reports: Report[]
   petitions: Petition[]
   onPetitionsChange: (p: Petition[]) => void
+  missingPeople: MissingPerson[]
+  onMissingChange: () => void
   onGoReport?: () => void
   pickMode?: boolean
   onPick?: (lat: number, lng: number) => void
@@ -51,6 +56,8 @@ export function MapView({
   reports,
   petitions,
   onPetitionsChange,
+  missingPeople,
+  onMissingChange,
   onGoReport,
   pickMode,
   onPick,
@@ -63,6 +70,7 @@ export function MapView({
   const [selectedKey, setSelectedKey] = useState<string | null>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
+  const [missingOpen, setMissingOpen] = useState(false)
 
   const visibleReports = useMemo(
     () => reports.filter((r) => !r.hidden),
@@ -188,7 +196,10 @@ export function MapView({
 
   return (
     <div className={`map-layout ${pickMode ? 'pick-mode' : ''}`}>
-      {!pickMode && <div className="map-side map-side-desktop">{guide}</div>}
+      {!pickMode && <div className="map-side map-side-desktop">
+        <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+        {guide}
+      </div>}
 
       <div className="map-stage">
         {!pickMode && (
@@ -202,6 +213,10 @@ export function MapView({
               {t.map.openGuide}
             </button>
           </div>
+        )}
+
+        {!pickMode && (
+          <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
         )}
 
         <MapContainer
@@ -274,6 +289,14 @@ export function MapView({
               <div className="map-sheet-body">{guide}</div>
             </div>
           </div>
+        ) : null}
+
+        {missingOpen && !pickMode ? (
+          <MissingBoard
+            people={missingPeople}
+            onClose={() => setMissingOpen(false)}
+            onChange={onMissingChange}
+          />
         ) : null}
       </div>
     </div>
