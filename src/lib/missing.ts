@@ -1,4 +1,5 @@
 import { compressImageToDataUrl, dataUrlToJpegBlob } from './image'
+import { uploadMissingPhotoToCloudinary } from './cloudinary'
 import { supabase, supabaseConfigured } from './supabase'
 import type {
   FoundOutcome,
@@ -162,8 +163,14 @@ export async function submitMissingPerson(
   let photo = input.photoDataUrl
   let shared = false
 
-  const hosted = await uploadPhotoToSupabase(id, input.photoDataUrl)
-  if (hosted) photo = hosted
+  // Prefer Cloudinary (public CDN) → Supabase Storage → stay as data URL on this phone
+  const fromCloud = await uploadMissingPhotoToCloudinary(id, input.photoDataUrl)
+  if (fromCloud) {
+    photo = fromCloud
+  } else {
+    const fromSb = await uploadPhotoToSupabase(id, input.photoDataUrl)
+    if (fromSb) photo = fromSb
+  }
 
   const person: MissingPerson = {
     id,

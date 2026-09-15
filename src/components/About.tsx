@@ -1,4 +1,5 @@
 import { useI18n } from '../i18n'
+import { cloudinaryConfigured } from '../lib/cloudinary'
 import { supabaseConfigured } from '../lib/supabase'
 
 export function About() {
@@ -11,16 +12,15 @@ export function About() {
         <p>{t.about.body2}</p>
 
         <h2>{t.about.sharingTitle}</h2>
-        <p
-          className={
-            supabaseConfigured ? 'banner success' : 'banner warn'
-          }
-        >
+        <p className={supabaseConfigured ? 'banner success' : 'banner warn'}>
           {supabaseConfigured ? t.about.sharingOn : t.about.sharingOff}
         </p>
         <p className="hint">{t.about.sharingHow}</p>
 
         <h2>{t.about.photosTitle}</h2>
+        <p className={cloudinaryConfigured ? 'banner success' : 'banner warn'}>
+          {cloudinaryConfigured ? t.about.cloudinaryOn : t.about.cloudinaryOff}
+        </p>
         <p>{t.about.photosBody}</p>
         <ol className="about-steps">
           {t.about.photosSteps.map((step) => (

@@ -210,13 +210,17 @@ export const en = {
       'Create a free Supabase project → run supabase/schema.sql in the SQL Editor → put the Project URL and anon key into .env and GitHub secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY → redeploy Pages.',
     photosTitle: 'How missing photos are seen',
     photosBody:
-      'Someone uploads a face on Report missing. The app compresses it. With Supabase on, that photo goes to a public photo folder and every phone on the site can load it on the map strip and in the list. Without Supabase, only this phone sees it until you commit the JPG into GitHub (public/missing/photos/).',
+      'Someone uploads a face on Report missing. The app compresses it and sends it to Cloudinary (or Supabase Storage). Every phone then loads that public photo URL on the map strip and in the list. Names + photos only live on the Missing board — not on anonymous map pins.',
     photosSteps: [
-      'With Supabase: upload → photo is live for everyone within seconds (Storage URL).',
-      'Map strip shows faces of people still missing; tap a face for the full list and details.',
-      'Optional archive on your GitHub: Download files for GitHub → add to public/missing/ so Pages keeps a copy.',
-      'Found alive / deceased: ten separate phones must confirm the same outcome before status changes.',
+      'Upload → Cloudinary hosts the face → map strip shows it for everyone.',
+      'Tap a face for the full list: name, last seen, description, found votes.',
+      'Person details still sync through Supabase so all phones share the same list.',
+      'Found alive / deceased: ten separate phones must confirm the same outcome.',
     ] as string[],
+    cloudinaryOn: 'Cloudinary is set for missing photos.',
+    cloudinaryOff:
+      'Cloudinary not configured yet — create unsigned upload preset “the_voices_missing” on cloud dmhftsl2x, then rebuild Pages.',
+
     hardNos: 'Hard nos',
     nos: [
       'No names or nicknames on anonymous map reports',

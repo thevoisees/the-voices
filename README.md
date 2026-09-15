@@ -20,44 +20,30 @@ npm run dev
 
 Without Supabase, new reports stay in **this browser**. Seeds still show the Kempton Park case pins.
 
-## Live sharing (Supabase) — required for everyone to see new reports & photos
+## Live sharing (Supabase) — reports & missing list
 
-Right now the live site is **local-only** until keys are set. Do this once:
+**Status:** connected on the live site (`wljtudjcuwcxutsoekqn`). Map reports, missing-person *records*, and found-votes sync across phones.
 
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** → paste the full contents of [`supabase/schema.sql`](supabase/schema.sql) → **Run** (tables + `missing-photos` bucket).
-3. **Project Settings → API** → copy **Project URL** and **anon public** key.
-4. From this repo:
+You do **not** need the SQL Editor for photos if you use Cloudinary (below).
 
-```bash
-node scripts/configure-supabase.mjs "https://YOURPROJECT.supabase.co" "YOUR_ANON_KEY"
-```
+## Missing photos (Cloudinary)
 
-That writes `.env` (local) and GitHub secrets (Pages). Then push any commit so Actions rebuilds:
+**Cloud name:** `dmhftsl2x`  
+**Preset:** `the_voices_missing` (must be **Unsigned**)
 
-```bash
-git commit --allow-empty -m "chore: rebuild Pages with Supabase" && git push
-```
+1. Cloudinary → **Settings → Upload → Upload presets → Add upload preset**
+2. Name `the_voices_missing`, Signing mode **Unsigned**, Save
+3. Hard-refresh the site → **About** should show Cloudinary is set
 
-5. Open the app → **About**. You should see a green **Supabase is connected** banner.
+Never put the API **Secret** in the website. See [`docs/CLOUDINARY.md`](docs/CLOUDINARY.md).
 
 ## How missing photos are seen
 
-| Mode | What happens |
-|------|----------------|
-| **Supabase on** | Upload → photo goes to public Storage → **every phone** sees the face on the map strip and in the list within seconds. |
-| **Supabase off** | Photo stays on **that phone only** until you **Download files for GitHub** and commit into `public/missing/photos/` + `people.json`, then Pages deploys. |
-
-Map strip = faces still missing. Tap a face → full name, last seen, description, found votes.
-
-## Missing persons archive on GitHub (optional)
-
-```bash
-node scripts/add-missing-person.mjs ~/Downloads/{id}.json ~/Downloads/{id}.jpg
-git add public/missing && git commit -m "Add missing person photo" && git push
-```
-
-**Found (alive / deceased):** ten separate device confirmations for the same outcome flip the status. With Supabase, votes sync across phones.
+| Piece | Job |
+|------|-----|
+| **Cloudinary** | Hosts the face image (public URL) |
+| **Supabase** | Stores the person record (name, last seen, votes) so every phone shares the list |
+| **Map strip** | Shows faces → tap for full details |
 
 ## Quick start
 

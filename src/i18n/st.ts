@@ -207,13 +207,16 @@ export const st: Dict = {
       'Theha projeke ea Supabase → sebetsa schema.sql → kenya URL le anon key ho .env le GitHub secrets → deploy hape.',
     photosTitle: 'Linepe tsa ba lahlehileng li bonoa joang',
     photosBody:
-      'Motho o kenya foto. Ha Supabase e butsoe, lifono tsohle li e bona striping. Ha e sa butsoa, fono ena feela — kapa u kenya JPG ho GitHub.',
+      'Motho o kenya foto → Cloudinary (kapa Supabase) ea e boloka → bohle ba e bona striping. Mabitso le linepe ke board ea Missing feela.',
     photosSteps: [
-      'Ka Supabase: kenya → foto e bonahala ho bohle.',
-      'Strip ea mapa e bontša lifahleho; tobetsa bakeng sa lenane.',
-      'Boikhethelo: khoasolla pack ea GitHub → public/missing/.',
-      'O fumanoe: lifono tse 10 li tlameha ho netefatsa sephetho se tšoanang.',
+      'Kenya → Cloudinary e boloka → strip e bontša bohle.',
+      'Tobetsa sefahleho bakeng sa lebitso le sebaka.',
+      'Lintlha li tsamaisana ka Supabase.',
+      'O fumanoe: lifono tse 10 li tlameha ho netefatsa.',
     ],
+    cloudinaryOn: 'Cloudinary e hlophisitsoe bakeng sa linepe.',
+    cloudinaryOff:
+      'Cloudinary ha e hlophisoe — theha preset “the_voices_missing” (Unsigned) ho dmhftsl2x.',
     hardNos: 'Lintho tse thibetsoeng',
     nos: [
       'Ha ho mabitso litlalehong tse sa tsejoeng',

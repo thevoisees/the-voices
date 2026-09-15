@@ -207,13 +207,16 @@ export const zu: Dict = {
       'Dala i-project ye-Supabase → gijima i-schema.sql → faka i-URL ne-anon key ku-.env nase-GitHub secrets → deploy kabusha.',
     photosTitle: 'Izithombe zabalahlekile zibonwa kanjani',
     photosBody:
-      'Othile ulayisha isithombe. Uma i-Supabase ivuliwe, sonke sifona siyabona ku-strip. Uma ingavuliwe, le foni kuphela — noma ufaka i-JPG ku-GitHub.',
+      'Othile ulayisha isithombe → i-Cloudinary (noma i-Supabase) iyigcina → wonke umuntu uyabona ku-strip. Amagama nezithombe kwi-Missing board kuphela.',
     photosSteps: [
-      'Ne-Supabase: layisha → isithombe sibonakala kuwo wonke umuntu.',
-      'I-strip yemephu ibonisa ubuso; thepha ukuze ubone uhlu.',
-      'Okukhethekile: landa ipakethe ye-GitHub → public/missing/.',
-      'Utholiwe: amafoni ayi-10 kufanele aqinisekise umphumela ofanayo.',
+      'Layisha → i-Cloudinary igcina → i-strip ibonisa kuwo wonke umuntu.',
+      'Thepha ubuso ukuze ubone igama nendawo.',
+      'Imininingwane ihambisana nge-Supabase.',
+      'Utholiwe: amafoni ayi-10 kufanele aqinisekise.',
     ],
+    cloudinaryOn: 'I-Cloudinary isethiwe ezithombeni.',
+    cloudinaryOff:
+      'I-Cloudinary ayakalungi — dala i-preset “the_voices_missing” (Unsigned) ku-dmhftsl2x.',
     hardNos: 'Okungavunyelwe',
     nos: [
       'Akukho amagama emibikweni engaziwa',
