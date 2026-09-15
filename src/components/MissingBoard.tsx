@@ -10,6 +10,7 @@ import {
   submitMissingPerson,
   verifyFound,
 } from '../lib/missing'
+import { supabaseConfigured } from '../lib/supabase'
 import type { AffectedGender } from '../types'
 import type { FoundOutcome, MissingPerson } from '../types-missing'
 import { MISSING_VERIFY_THRESHOLD } from '../types-missing'
@@ -103,7 +104,7 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
       setStatus(t.missing.needFields)
       return
     }
-    setStatus(t.missing.success)
+    setStatus(res.shared ? t.missing.successShared : t.missing.success)
     setName('')
     setPhoto(null)
     setPlace('')
@@ -421,7 +422,9 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
               />
             </label>
 
-            <p className="hint">{t.missing.githubNote}</p>
+            <p className="hint">
+              {supabaseConfigured ? t.missing.githubNote : t.missing.githubNoteLocal}
+            </p>
 
             <button type="submit" className="primary" disabled={busy}>
               {busy ? t.missing.submitting : t.missing.submit}

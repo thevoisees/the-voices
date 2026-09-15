@@ -1,4 +1,4 @@
-import { compressImageToDataUrl } from './image'
+import { compressImageToDataUrl, dataUrlToJpegBlob } from './image'
 import { supabase, supabaseConfigured } from './supabase'
 import type {
   FoundOutcome,
@@ -11,6 +11,7 @@ const LOCAL_KEY = 'thevoices_missing_people'
 const VOTES_KEY = 'thevoices_missing_votes'
 const DEVICE_KEY = 'thevoices_device_id'
 const CATALOG_URL = './missing/people.json'
+const PHOTO_BUCKET = 'missing-photos'
 
 function deviceId(): string {
   let id = localStorage.getItem(DEVICE_KEY)
@@ -69,8 +70,19 @@ async function fetchLive(): Promise<MissingPerson[]> {
     .eq('hidden', false)
     .order('created_at', { ascending: false })
     .limit(500)
-  if (error || !data) return []
+  if (error || !data) {
+    console.warn('missing_people fetch failed', error?.message)
+    return []
+  }
   return (data as MissingPerson[]).map((p) => ({ ...p, source: 'live' as const }))
+}
+
+function preferPhoto(a: string, b: string): string {
+  if (a.startsWith('http')) return a
+  if (b.startsWith('http')) return b
+  if (a.startsWith('./') || a.startsWith('/')) return a
+  if (b.startsWith('./') || b.startsWith('/')) return b
+  return a || b
 }
 
 function mergePeople(lists: MissingPerson[][]): MissingPerson[] {
@@ -82,19 +94,18 @@ function mergePeople(lists: MissingPerson[][]): MissingPerson[] {
         map.set(p.id, p)
         continue
       }
-      // Prefer higher verification counts / found status
       map.set(p.id, {
         ...prev,
         ...p,
-        verify_alive: Math.max(prev.verify_alive, p.verify_alive),
-        verify_dead: Math.max(prev.verify_dead, p.verify_dead),
+        verify_alive: Math.max(prev.verify_alive ?? 0, p.verify_alive ?? 0),
+        verify_dead: Math.max(prev.verify_dead ?? 0, p.verify_dead ?? 0),
         status:
           prev.status !== 'missing'
             ? prev.status
             : p.status !== 'missing'
               ? p.status
               : 'missing',
-        photo: p.photo?.startsWith('data:') ? prev.photo || p.photo : p.photo || prev.photo,
+        photo: preferPhoto(p.photo, prev.photo),
       })
     }
   }
@@ -112,6 +123,23 @@ export function resolvePhotoUrl(photo: string): string {
   return `./missing/photos/${photo}`
 }
 
+/** Upload compressed JPEG to public Supabase Storage; returns public URL or null. */
+async function uploadPhotoToSupabase(id: string, dataUrl: string): Promise<string | null> {
+  if (!supabaseConfigured || !supabase) return null
+  const path = `${id}.jpg`
+  const blob = dataUrlToJpegBlob(dataUrl)
+  const { error } = await supabase.storage.from(PHOTO_BUCKET).upload(path, blob, {
+    contentType: 'image/jpeg',
+    upsert: true,
+  })
+  if (error) {
+    console.warn('photo upload failed', error.message)
+    return null
+  }
+  const { data } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+  return data.publicUrl
+}
+
 export async function fetchMissingPeople(): Promise<MissingPerson[]> {
   const [github, live, local] = await Promise.all([
     fetchGithubCatalog(),
@@ -123,7 +151,7 @@ export async function fetchMissingPeople(): Promise<MissingPerson[]> {
 
 export async function submitMissingPerson(
   input: NewMissingInput,
-): Promise<{ ok: boolean; person?: MissingPerson; error?: string }> {
+): Promise<{ ok: boolean; person?: MissingPerson; error?: string; shared?: boolean }> {
   const name = input.name.trim()
   const place = input.last_seen_place.trim()
   if (!name || !place || !input.photoDataUrl) {
@@ -131,10 +159,16 @@ export async function submitMissingPerson(
   }
 
   const id = crypto.randomUUID()
+  let photo = input.photoDataUrl
+  let shared = false
+
+  const hosted = await uploadPhotoToSupabase(id, input.photoDataUrl)
+  if (hosted) photo = hosted
+
   const person: MissingPerson = {
     id,
     name,
-    photo: input.photoDataUrl,
+    photo,
     gender: input.gender,
     age_note: input.age_note?.trim() || null,
     last_seen_place: place,
@@ -174,12 +208,15 @@ export async function submitMissingPerson(
       hidden: false,
     })
     if (!error) {
+      shared = true
       person.source = 'live'
       saveLocal(local.map((p) => (p.id === id ? person : p)))
+    } else {
+      console.warn('missing_people insert failed', error.message)
     }
   }
 
-  return { ok: true, person }
+  return { ok: true, person, shared }
 }
 
 export async function prepareMissingPhoto(file: File): Promise<string> {
@@ -222,7 +259,6 @@ export async function verifyFound(
     verify_dead: target.verify_dead + (outcome === 'dead' ? 1 : 0),
   })
 
-  // Persist count on local copy
   const local = loadLocal()
   const idx = local.findIndex((p) => p.id === personId)
   if (idx >= 0) {
@@ -260,7 +296,6 @@ export function downloadGithubPack(person: MissingPerson) {
     photo: `./missing/photos/${photoName}`,
     source: 'github',
   }
-  // JSON entry
   const jsonBlob = new Blob([JSON.stringify(entry, null, 2)], {
     type: 'application/json',
   })
@@ -275,5 +310,7 @@ export function downloadGithubPack(person: MissingPerson) {
     a2.href = person.photo
     a2.download = photoName
     a2.click()
+  } else if (person.photo.startsWith('http')) {
+    window.open(person.photo, '_blank', 'noopener,noreferrer')
   }
 }

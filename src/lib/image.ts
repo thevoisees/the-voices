@@ -25,3 +25,10 @@ export function dataUrlToJpegBytes(dataUrl: string): Uint8Array {
   for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i)
   return out
 }
+
+export function dataUrlToJpegBlob(dataUrl: string): Blob {
+  const bytes = dataUrlToJpegBytes(dataUrl)
+  const copy = new Uint8Array(bytes.byteLength)
+  copy.set(bytes)
+  return new Blob([copy.buffer], { type: 'image/jpeg' })
+}

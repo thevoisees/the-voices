@@ -110,11 +110,15 @@ export const en = {
     reportWarn:
       'Only report someone who is truly missing. Photos are for finding them — not for naming alleged perpetrators.',
     githubNote:
-      'Photos are stored for GitHub Pages (public/missing/). After you submit, download the pack and commit the JPG + JSON into the repo so everyone sees them after deploy.',
+      'With Supabase connected, everyone sees the photo right away. You can still download a GitHub pack to keep a copy in this repo under public/missing/.',
+    githubNoteLocal:
+      'Supabase is off — this photo stays on this phone for now. Download the GitHub pack and commit it so the whole site can show the face after Pages deploys.',
     downloadGithub: 'Download files for GitHub',
     submit: 'Submit missing report',
     submitting: 'Saving…',
-    success: 'Saved. Open the person and download the GitHub pack so the photo goes on the site.',
+    success:
+      'Saved on this phone only. Download the GitHub pack (or connect Supabase) so others can see the photo.',
+    successShared: 'Live for everyone — photo is on shared storage. Others will see it on the map strip.',
     needPhoto: 'Please add a photo.',
     needFields: 'Name, place, and photo are required.',
     photoFail: 'Could not read that photo. Try another image.',
@@ -197,6 +201,22 @@ export const en = {
       'The Voices maps places and patterns so women and children can see where reports cluster. We do not publish names, surnames, faces, number plates, schools, or workplaces on the anonymous map.',
     body2:
       'The private notebook is yours alone. We do not read it. Area petitions ask for lights and patrols — not for anonymous arrests. The Missing persons board is the only place that may show a name and photo — to help find someone who is missing.',
+    sharingTitle: 'Live sharing (Supabase)',
+    sharingOn:
+      'Supabase is connected. New map reports, missing persons, photos, and found-votes sync across phones.',
+    sharingOff:
+      'Supabase is not connected yet — this build is local-only. Reports and photos stay on this phone until you wire a project (see README / scripts/configure-supabase.mjs).',
+    sharingHow:
+      'Create a free Supabase project → run supabase/schema.sql in the SQL Editor → put the Project URL and anon key into .env and GitHub secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY → redeploy Pages.',
+    photosTitle: 'How missing photos are seen',
+    photosBody:
+      'Someone uploads a face on Report missing. The app compresses it. With Supabase on, that photo goes to a public photo folder and every phone on the site can load it on the map strip and in the list. Without Supabase, only this phone sees it until you commit the JPG into GitHub (public/missing/photos/).',
+    photosSteps: [
+      'With Supabase: upload → photo is live for everyone within seconds (Storage URL).',
+      'Map strip shows faces of people still missing; tap a face for the full list and details.',
+      'Optional archive on your GitHub: Download files for GitHub → add to public/missing/ so Pages keeps a copy.',
+      'Found alive / deceased: ten separate phones must confirm the same outcome before status changes.',
+    ] as string[],
     hardNos: 'Hard nos',
     nos: [
       'No names or nicknames on anonymous map reports',

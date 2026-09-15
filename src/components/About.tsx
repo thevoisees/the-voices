@@ -9,6 +9,25 @@ export function About() {
         <h1>{t.about.title}</h1>
         <p>{t.about.body1}</p>
         <p>{t.about.body2}</p>
+
+        <h2>{t.about.sharingTitle}</h2>
+        <p
+          className={
+            supabaseConfigured ? 'banner success' : 'banner warn'
+          }
+        >
+          {supabaseConfigured ? t.about.sharingOn : t.about.sharingOff}
+        </p>
+        <p className="hint">{t.about.sharingHow}</p>
+
+        <h2>{t.about.photosTitle}</h2>
+        <p>{t.about.photosBody}</p>
+        <ol className="about-steps">
+          {t.about.photosSteps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+
         <h2>{t.about.hardNos}</h2>
         <ul>
           {t.about.nos.map((n) => (
@@ -16,12 +35,6 @@ export function About() {
           ))}
         </ul>
         <p className="hint">{t.about.role}</p>
-        <p className="hint">
-          Live shared pins:{' '}
-          {supabaseConfigured
-            ? 'Supabase connected'
-            : 'local-only mode (set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for live sharing)'}
-        </p>
       </article>
     </div>
   )

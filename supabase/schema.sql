@@ -142,3 +142,24 @@ create policy "Public upsert missing votes"
   using (true)
   with check (true);
 
+-- Public photo bucket for missing persons (faces everyone can load)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('missing-photos', 'missing-photos', true, 2097152, array['image/jpeg', 'image/png', 'image/webp'])
+on conflict (id) do update set public = true;
+
+create policy "Public read missing photos"
+  on storage.objects for select
+  to anon, authenticated
+  using (bucket_id = 'missing-photos');
+
+create policy "Public upload missing photos"
+  on storage.objects for insert
+  to anon, authenticated
+  with check (bucket_id = 'missing-photos');
+
+create policy "Public update missing photos"
+  on storage.objects for update
+  to anon, authenticated
+  using (bucket_id = 'missing-photos')
+  with check (bucket_id = 'missing-photos');
+

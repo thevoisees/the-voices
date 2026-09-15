@@ -111,11 +111,15 @@ export const zu: Dict = {
     markMap: 'Maka indawo yokugcina emephini (okukhethekile)',
     reportWarn: 'Bika kuphela umuntu olahlekile ngempela. Izithombe zokuthola — hhayi ukumaka umsolwa.',
     githubNote:
-      'Izithombe zihlala ku-GitHub Pages (public/missing/). Ngemva kokuthumela, landa ipakethe bese ufaka i-JPG ne-JSON kurepo.',
+      'Uma i-Supabase ixhumekile, wonke umuntu uyabona isithombe. Ungalanda ipakethe ye-GitHub ukuze ugcine ikhophi ku-public/missing/.',
+    githubNoteLocal:
+      'I-Supabase icishiwe — isithombe sihlezi kule foni. Landa ipakethe ye-GitHub bese uyifaka ukuze isayithi ibonise ubuso.',
     downloadGithub: 'Landa amafayela e-GitHub',
     submit: 'Thumela umbiko wokulahleka',
     submitting: 'Iyalondoloza…',
-    success: 'Kulondoloziwe. Vula umuntu ulande ipakethe ye-GitHub.',
+    success:
+      'Kulondoloziwe kule foni kuphela. Landa ipakethe ye-GitHub (noma xhuma i-Supabase) ukuze abanye babone.',
+    successShared: 'Kubonakala kuwo wonke umuntu — isithombe sikustorage. Bazosibona ku-strip.',
     needPhoto: 'Sicela wengeze isithombe.',
     needFields: 'Igama, indawo, nesithombe kuyadingeka.',
     photoFail: 'Isithombe asifundekanga. Zama esinye.',
@@ -194,6 +198,22 @@ export const zu: Dict = {
       'I-The Voices imepha izindawo namaphethini ukuze abesifazane nezingane babone lapho imibiko iqoqana khona. Asishicileli amagama, ubuso, noma amapleyiti emephini engaziwa.',
     body2:
       'Incwadi yangasese ngeyakho wedwa. Izicelo zendawo zicela ukukhanya nokugada — hhayi ukuboshwa okungaziwa. Ibhodi labalahlekile kuphela elingabonisa igama nesithombe.',
+    sharingTitle: 'Ukwabelana (Supabase)',
+    sharingOn:
+      'I-Supabase ixhumekile. Imibiko, abalahlekile, izithombe, namavoti ayahambisana kuma-foni.',
+    sharingOff:
+      'I-Supabase ayixhumekile — le build isebenza kule foni kuphela. Bona i-README / scripts/configure-supabase.mjs.',
+    sharingHow:
+      'Dala i-project ye-Supabase → gijima i-schema.sql → faka i-URL ne-anon key ku-.env nase-GitHub secrets → deploy kabusha.',
+    photosTitle: 'Izithombe zabalahlekile zibonwa kanjani',
+    photosBody:
+      'Othile ulayisha isithombe. Uma i-Supabase ivuliwe, sonke sifona siyabona ku-strip. Uma ingavuliwe, le foni kuphela — noma ufaka i-JPG ku-GitHub.',
+    photosSteps: [
+      'Ne-Supabase: layisha → isithombe sibonakala kuwo wonke umuntu.',
+      'I-strip yemephu ibonisa ubuso; thepha ukuze ubone uhlu.',
+      'Okukhethekile: landa ipakethe ye-GitHub → public/missing/.',
+      'Utholiwe: amafoni ayi-10 kufanele aqinisekise umphumela ofanayo.',
+    ],
     hardNos: 'Okungavunyelwe',
     nos: [
       'Akukho amagama emibikweni engaziwa',

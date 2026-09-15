@@ -1292,10 +1292,16 @@ a {
   }
 }
 
-.stats-kpis-missing {
-  grid-template-columns: repeat(3, 1fr);
-  margin-top: 0.75rem;
+.about-steps {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.2rem;
+  color: var(--ink);
 }
+
+.about-steps li {
+  margin-bottom: 0.4rem;
+}
+
 
 /* ——— Missing persons ——— */
 .missing-strip {
