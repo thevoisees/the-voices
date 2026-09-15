@@ -1084,7 +1084,15 @@ a {
   }
 
   .main {
-    /* room above sticky bottom nav when scrolling pages */
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .main > .map-layout {
+    flex: 1;
+    min-height: 0;
   }
 
   .page-scroll {
@@ -1103,21 +1111,33 @@ a {
   }
 
   .map-stage {
+    position: relative;
     min-height: 0;
     height: 100%;
     flex: 1;
+    overflow: hidden;
   }
 
   .map-chrome {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.5rem;
-    flex-shrink: 0;
-    padding: 0.6rem 0.8rem 0.65rem;
-    background: rgba(255, 253, 251, 0.96);
-    border-bottom: 1px solid var(--line);
-    z-index: 400;
+    gap: 0.35rem;
+    padding: 0.5rem 0.65rem 0.55rem;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 253, 251, 0.96) 0%,
+      rgba(255, 253, 251, 0.9) 70%,
+      rgba(255, 253, 251, 0.72) 100%
+    );
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent);
+    z-index: 500;
+    box-shadow: 0 8px 24px rgba(36, 24, 51, 0.08);
   }
 
   .map-chrome-row {
@@ -1129,74 +1149,57 @@ a {
 
   .map-chrome-summary {
     margin: 0;
-    font-size: 0.86rem;
+    font-size: 0.82rem;
     font-weight: 700;
     color: var(--purple-deep);
-    line-height: 1.3;
+    line-height: 1.25;
   }
 
   .map-chrome-actions {
     display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    overflow-x: auto;
+    padding-bottom: 0.1rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .map-chrome-actions::-webkit-scrollbar {
+    display: none;
   }
 
   .map-chrome-btn {
     border: 1px solid var(--line);
-    background: var(--purple-soft);
+    background: rgba(255, 255, 255, 0.92);
     color: var(--purple-deep);
     border-radius: 999px;
-    padding: 0.42rem 0.8rem;
-    font-size: 0.76rem;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.74rem;
     font-weight: 700;
     cursor: pointer;
     white-space: nowrap;
     line-height: 1.2;
+    flex-shrink: 0;
+  }
+
+  .map-chrome-btn-petition {
+    border-color: color-mix(in srgb, var(--purple) 45%, var(--line));
   }
 
   .map-chrome-petition-hint {
-    margin: 0;
-    font-size: 0.72rem;
-    color: var(--muted);
-    line-height: 1.35;
+    display: none;
   }
 
   .map-rail {
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    max-height: min(34vh, 240px);
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch;
-    border-bottom: 1px solid var(--line);
-    background: #fff;
-  }
-
-  .map-rail .missing-strip,
-  .map-rail .petition-strip {
-    margin: 0;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    border-top: none;
-  }
-
-  .map-rail .missing-strip {
-    border-bottom: 1px solid var(--line);
-    padding: 0.55rem 0.8rem 0.6rem;
-  }
-
-  .map-rail .petition-strip {
-    border-bottom: none;
-    padding: 0.55rem 0.8rem 0.65rem;
-    background: color-mix(in srgb, var(--purple-soft) 55%, #fff);
+    display: none !important;
   }
 
   .map-tap-hint {
     display: block;
     position: absolute;
     left: 50%;
-    bottom: 0.85rem;
+    bottom: 1rem;
     transform: translateX(-50%);
     z-index: 450;
     margin: 0;
@@ -1260,10 +1263,16 @@ a {
   }
 
   .leaflet-root {
-    flex: 1 1 auto;
-    min-height: 200px;
-    height: auto;
-    width: 100%;
+    position: absolute !important;
+    inset: 0;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    z-index: 0;
+  }
+
+  .leaflet-root .leaflet-control-zoom {
+    margin-top: 5.75rem;
   }
 
   .cell-detail {

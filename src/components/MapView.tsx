@@ -168,6 +168,10 @@ export function MapView({
     () => new Set(areaPetitions(petitions).map((p) => p.grid_key)),
     [petitions],
   )
+  const missingActive = useMemo(
+    () => missingPeople.filter((p) => p.status === 'missing' && !p.hidden).length,
+    [missingPeople],
+  )
 
   function openPetitionById(id: string) {
     const p = petitions.find((x) => x.id === id)
@@ -352,6 +356,14 @@ export function MapView({
               </button>
               <button
                 type="button"
+                className="map-chrome-btn"
+                onClick={() => setMissingOpen(true)}
+              >
+                {t.missing.stripTitle}
+                {missingActive > 0 ? ` (${missingActive})` : ''}
+              </button>
+              <button
+                type="button"
                 className="map-chrome-btn map-chrome-btn-petition"
                 onClick={() => setPetitionBoardOpen(true)}
               >
@@ -366,20 +378,6 @@ export function MapView({
                 {t.map.openGuide}
               </button>
             </div>
-            {petitions.length > 0 ? (
-              <p className="map-chrome-petition-hint">{t.map.petitionMapHint}</p>
-            ) : null}
-          </div>
-        )}
-
-        {!pickMode && (
-          <div className="map-rail">
-            <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
-            <PetitionStrip
-              petitions={petitions}
-              onOpen={() => setPetitionBoardOpen(true)}
-              onOpenOne={openPetitionById}
-            />
           </div>
         )}
 
