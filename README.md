@@ -4,10 +4,8 @@ Anonymous place-based incident map for South Africa. **No names.** Places, times
 
 ## Live links
 
-- **Code (GitHub):** https://github.com/ThabisoX/the-voices
-- **GitHub Pages:** https://thabisox.github.io/the-voices/
-
-GitHub always puts the account name in `*.github.io` URLs. For a public link **without** a personal name, create a free org such as `the-voices-sa` at https://github.com/account/organizations/new — then the Pages URL can become `https://the-voices-sa.github.io/the-voices/` after transferring this repo.
+- **App (phone-friendly):** https://thevoisees.github.io/the-voices/
+- **Code:** https://github.com/thevoisees/the-voices
 
 Opens with a black-and-white intro. Press **Say something** to enter the map.
 
