@@ -1,8 +1,17 @@
 # The Voices
 
-Anonymous place-based incident map for South Africa. **No names.** Places, times, categories, and patterns — so women and children can see where reports cluster.
+Anonymous place-based incident map for South Africa. **No names.** Places, times, categories, and patterns.
+
+## Live links
+
+- **Code (GitHub):** https://github.com/ThabisoX/the-voices
+- **GitHub Pages:** https://thabisox.github.io/the-voices/
+
+GitHub always puts the account name in `*.github.io` URLs. For a public link **without** a personal name, create a free org such as `the-voices-sa` at https://github.com/account/organizations/new — then the Pages URL can become `https://the-voices-sa.github.io/the-voices/` after transferring this repo.
 
 Opens with a black-and-white intro. Press **Say something** to enter the map.
+
+Seed data is only the publicly reported **Kempton Park / Ekurhuleni** dump-site points (no victim names, no demo incidents).
 
 ## Quick start
 
@@ -11,7 +20,7 @@ npm install
 npm run dev
 ```
 
-Without Supabase, reports and petitions stay in **this browser**. Seed pins around Kempton Park / R21 still appear.
+Without Supabase, new reports stay in **this browser**. Seeds still show the Kempton Park case pins.
 
 ## Live shared pins (Supabase)
 
@@ -19,20 +28,6 @@ Without Supabase, reports and petitions stay in **this browser**. Seed pins arou
 2. Run [`supabase/schema.sql`](supabase/schema.sql) in the SQL Editor.
 3. Copy `.env.example` → `.env` and set `VITE_SUPABASE_URL` + `VITE_SUPABASE_ANON_KEY`.
 4. Restart `npm run dev`.
-
-Hide leaked rows: Table Editor → `reports` → `hidden = true`.
-
-## Private notebook
-
-Entries stay on the user’s device only. The Voices never receives that text. Users can download a PDF themselves.
-
-## GitHub Pages
-
-```bash
-npm run build
-```
-
-Deploy `dist/`. Workflow: [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml).
 
 ## Hard rules
 
