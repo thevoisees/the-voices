@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   areaCaution,
   isSevereCategory,
@@ -8,12 +8,18 @@ import {
 import { CATEGORIES, CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
+import {
+  peekPlaceName,
+  placeCacheKey,
+  resolvePlaceName,
+} from '../lib/placename'
 import type { AffectedGender, CategoryId, Report, TimeBand } from '../types'
 import type { MissingPerson } from '../types-missing'
 
 type Props = {
   reports: Report[]
   missingPeople: MissingPerson[]
+  onOpenArea?: (spotKey: string) => void
 }
 
 const GENDERS: AffectedGender[] = ['woman', 'man', 'girl', 'boy', 'unknown']
@@ -173,8 +179,9 @@ function TipList({ tips }: { tips: string[] }) {
   )
 }
 
-export function Statistics({ reports, missingPeople }: Props) {
+export function Statistics({ reports, missingPeople, onOpenArea }: Props) {
   const { t } = useI18n()
+  const [placeNames, setPlaceNames] = useState<Record<string, string>>({})
 
   const summary = useMemo(() => {
     const visible = reports.filter((r) => !r.hidden)
@@ -225,6 +232,31 @@ export function Statistics({ reports, missingPeople }: Props) {
       areas,
     }
   }, [reports, missingPeople])
+
+  useEffect(() => {
+    const top = summary.areas.slice(0, 10)
+    const initial: Record<string, string> = {}
+    for (const a of top) {
+      const peek = peekPlaceName(a.lat, a.lng)
+      if (peek) initial[placeCacheKey(a.lat, a.lng)] = peek
+    }
+    if (Object.keys(initial).length) setPlaceNames((prev) => ({ ...initial, ...prev }))
+
+    let cancelled = false
+    ;(async () => {
+      for (const a of top) {
+        const name = await resolvePlaceName(a.lat, a.lng)
+        if (cancelled) return
+        setPlaceNames((prev) => ({
+          ...prev,
+          [placeCacheKey(a.lat, a.lng)]: name,
+        }))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [summary.areas])
 
   const timeLabels: Record<TimeBand, string> = {
     morning: t.report.morning,
@@ -281,8 +313,12 @@ export function Statistics({ reports, missingPeople }: Props) {
                 const types = area.topCategories
                   .map((id) => t.categories[id as keyof typeof t.categories])
                   .join(' · ')
-                return (
-                  <li key={area.key} className={`stats-area stats-area-${area.caution}`}>
+                const place =
+                  placeNames[placeCacheKey(area.lat, area.lng)] ??
+                  peekPlaceName(area.lat, area.lng)
+                const clickable = Boolean(onOpenArea)
+                const body = (
+                  <>
                     <div className="stats-area-head">
                       <strong className="stats-area-watch">{t.stats.beAware}</strong>
                       <span className={`stats-level stats-level-${area.caution}`}>
@@ -290,7 +326,12 @@ export function Statistics({ reports, missingPeople }: Props) {
                       </span>
                     </div>
                     <p className="stats-area-zone">
-                      {t.stats.zoneLabel
+                      {place
+                        ? t.stats.zoneNamed.replace('{place}', place)
+                        : t.stats.resolvingPlace}
+                    </p>
+                    <p className="stats-area-meta">
+                      {t.stats.zoneCoords
                         .replace('{lat}', area.lat.toFixed(4))
                         .replace('{lng}', area.lng.toFixed(4))}
                     </p>
@@ -307,6 +348,24 @@ export function Statistics({ reports, missingPeople }: Props) {
                         {t.stats.watchTime.replace('{time}', timeLabels[area.topTime])}
                       </p>
                     ) : null}
+                    {clickable ? (
+                      <span className="stats-area-open">{t.stats.viewOnMap}</span>
+                    ) : null}
+                  </>
+                )
+                return (
+                  <li key={area.key} className={`stats-area stats-area-${area.caution}`}>
+                    {clickable ? (
+                      <button
+                        type="button"
+                        className="stats-area-btn"
+                        onClick={() => onOpenArea?.(area.key)}
+                      >
+                        {body}
+                      </button>
+                    ) : (
+                      body
+                    )}
                   </li>
                 )
               })}

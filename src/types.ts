@@ -50,11 +50,38 @@ export interface AreaPetition {
   created_at: string
   title: string
   ask: string
+  /** national = whole country; area = linked to a map zone */
+  scope: PetitionScope
   grid_key: string
   grid_lat: number
   grid_lng: number
+  place_label?: string | null
   goal: number
   count: number
+  flag_count: number
+  hidden: boolean
+  source?: 'live' | 'local'
+}
+
+export type PetitionScope = 'national' | 'area'
+
+/** Community call-outs: marches, prayer meetings, vigils, etc. */
+export type AnnouncementKind = 'march' | 'prayer' | 'meeting' | 'vigil' | 'other'
+export type AnnouncementVoice = 'group' | 'individual'
+
+export interface CommunityAnnouncement {
+  id: string
+  created_at: string
+  title: string
+  body: string
+  kind: AnnouncementKind
+  voice: AnnouncementVoice
+  /** Group name (e.g. Women for Change) or anonymous individual label — not a legal ID */
+  organizer: string
+  when_text: string
+  where_text: string
+  /** How to join — no phone/email (stripped) */
+  join_note: string | null
   flag_count: number
   hidden: boolean
   source?: 'live' | 'local'
@@ -72,4 +99,4 @@ export interface NotebookEntry {
 
 export type Lang = 'en' | 'zu' | 'st'
 
-export type Screen = 'map' | 'stats' | 'report' | 'notebook' | 'about'
+export type Screen = 'map' | 'petitions' | 'stats' | 'report' | 'notebook' | 'about'

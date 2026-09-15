@@ -53,7 +53,14 @@ export function PetitionSheet({
     e.preventDefault()
     setBusy(true)
     setStatus(null)
-    const res = await createPetition({ title, ask, lat: cellLat, lng: cellLng, goal })
+    const res = await createPetition({
+      title,
+      ask,
+      scope: 'area',
+      lat: cellLat,
+      lng: cellLng,
+      goal,
+    })
     setBusy(false)
     if (!res.ok || !res.petition) {
       setStatus(t.petitions.needFields)

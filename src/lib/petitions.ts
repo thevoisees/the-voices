@@ -1,5 +1,5 @@
 import { jsPDF } from 'jspdf'
-import type { AreaPetition } from '../types'
+import type { AreaPetition, PetitionScope } from '../types'
 import { DEFAULT_PETITION_GOAL, FLAG_THRESHOLD, getDeviceId } from './device'
 import { gridKey, snapToGrid } from './grid'
 import { stripIdentity } from './strip'
@@ -9,11 +9,18 @@ const LOCAL_KEY = 'thevoices_area_petitions'
 const SIGNS_KEY = 'thevoices_petition_signs'
 const FLAGS_KEY = 'thevoices_petition_flags'
 
+/** Sentinel for national (not map-zone) petitions */
+export const NATIONAL_GRID_KEY = 'national'
+export const NATIONAL_LAT = -28.48
+export const NATIONAL_LNG = 24.67
+
 function loadLocal(): AreaPetition[] {
   try {
     const raw = localStorage.getItem(LOCAL_KEY)
     if (!raw) return []
-    return (JSON.parse(raw) as AreaPetition[]).filter((p) => !p.hidden)
+    return (JSON.parse(raw) as AreaPetition[])
+      .map(normalizePetition)
+      .filter((p) => !p.hidden)
   } catch {
     return []
   }
@@ -23,7 +30,7 @@ function loadAllLocal(): AreaPetition[] {
   try {
     const raw = localStorage.getItem(LOCAL_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as AreaPetition[]
+    return (JSON.parse(raw) as AreaPetition[]).map(normalizePetition)
   } catch {
     return []
   }
@@ -47,10 +54,26 @@ function saveSet(key: string, s: Set<string>) {
   localStorage.setItem(key, JSON.stringify([...s]))
 }
 
+export function normalizePetition(p: AreaPetition): AreaPetition {
+  const scope: PetitionScope =
+    p.scope ?? (p.grid_key === NATIONAL_GRID_KEY ? 'national' : 'area')
+  return {
+    ...p,
+    scope,
+    place_label: p.place_label ?? null,
+    flag_count: p.flag_count ?? 0,
+  }
+}
+
+export function isNationalPetition(p: AreaPetition): boolean {
+  return normalizePetition(p).scope === 'national'
+}
+
 function mergePetitions(lists: AreaPetition[][]): AreaPetition[] {
   const map = new Map<string, AreaPetition>()
   for (const list of lists) {
-    for (const p of list) {
+    for (const raw of list) {
+      const p = normalizePetition(raw)
       if (p.hidden) continue
       const prev = map.get(p.id)
       if (!prev) {
@@ -86,7 +109,9 @@ export async function fetchPetitions(): Promise<AreaPetition[]> {
     return local
   }
 
-  const live = (data as AreaPetition[]).map((p) => ({ ...p, source: 'live' as const }))
+  const live = (data as AreaPetition[]).map((p) =>
+    normalizePetition({ ...p, source: 'live' }),
+  )
   return mergePetitions([live, local])
 }
 
@@ -98,9 +123,11 @@ export async function fetchPetitionById(id: string): Promise<AreaPetition | null
 export type NewPetitionInput = {
   title: string
   ask: string
-  lat: number
-  lng: number
+  scope: PetitionScope
+  lat?: number | null
+  lng?: number | null
   goal?: number
+  place_label?: string | null
 }
 
 export async function createPetition(
@@ -110,16 +137,36 @@ export async function createPetition(
   const ask = stripIdentity(input.ask.trim()) || ''
   if (!title || !ask) return { ok: false, error: 'need_fields' }
 
-  const g = snapToGrid(input.lat, input.lng)
+  const scope: PetitionScope = input.scope === 'national' ? 'national' : 'area'
+  if (scope === 'area' && (input.lat == null || input.lng == null)) {
+    return { ok: false, error: 'need_place' }
+  }
+
   const goal = Math.max(1, Math.min(500, input.goal ?? DEFAULT_PETITION_GOAL))
+  const place_label = input.place_label?.trim()
+    ? stripIdentity(input.place_label.trim())
+    : null
+
+  let grid_key = NATIONAL_GRID_KEY
+  let grid_lat = NATIONAL_LAT
+  let grid_lng = NATIONAL_LNG
+  if (scope === 'area' && input.lat != null && input.lng != null) {
+    const g = snapToGrid(input.lat, input.lng)
+    grid_key = gridKey(g.lat, g.lng)
+    grid_lat = Number(g.lat.toFixed(4))
+    grid_lng = Number(g.lng.toFixed(4))
+  }
+
   const petition: AreaPetition = {
     id: crypto.randomUUID(),
     created_at: new Date().toISOString(),
     title,
     ask,
-    grid_key: gridKey(g.lat, g.lng),
-    grid_lat: Number(g.lat.toFixed(4)),
-    grid_lng: Number(g.lng.toFixed(4)),
+    scope,
+    grid_key,
+    grid_lat,
+    grid_lng,
+    place_label,
     goal,
     count: 1,
     flag_count: 0,
@@ -127,7 +174,6 @@ export async function createPetition(
     source: 'local',
   }
 
-  // Creator auto-signs
   const signs = loadSet(SIGNS_KEY)
   signs.add(petition.id)
   saveSet(SIGNS_KEY, signs)
@@ -137,7 +183,7 @@ export async function createPetition(
   saveLocal(local)
 
   if (supabaseConfigured && supabase) {
-    const { error } = await supabase.from('area_petitions').insert({
+    const row: Record<string, unknown> = {
       id: petition.id,
       created_at: petition.created_at,
       title: petition.title,
@@ -149,7 +195,10 @@ export async function createPetition(
       count: 1,
       flag_count: 0,
       hidden: false,
-    })
+      scope: petition.scope,
+      place_label: petition.place_label,
+    }
+    const { error } = await supabase.from('area_petitions').insert(row)
     if (!error) {
       await supabase.from('area_petition_signs').upsert({
         petition_id: petition.id,
@@ -158,7 +207,29 @@ export async function createPetition(
       petition.source = 'live'
       saveLocal(local.map((p) => (p.id === petition.id ? petition : p)))
     } else {
-      console.warn('area_petitions insert failed', error.message)
+      // Older DBs without scope column — retry without new fields
+      const { error: err2 } = await supabase.from('area_petitions').insert({
+        id: petition.id,
+        created_at: petition.created_at,
+        title: petition.title,
+        ask: petition.ask,
+        grid_key: petition.grid_key,
+        grid_lat: petition.grid_lat,
+        grid_lng: petition.grid_lng,
+        goal: petition.goal,
+        count: 1,
+        flag_count: 0,
+        hidden: false,
+      })
+      if (!err2) {
+        await supabase.from('area_petition_signs').upsert({
+          petition_id: petition.id,
+          device_id: getDeviceId(),
+        })
+        petition.source = 'live'
+      } else {
+        console.warn('area_petitions insert failed', error.message, err2.message)
+      }
     }
   }
 
@@ -182,7 +253,7 @@ export async function signPetition(
   signs.add(id)
   saveSet(SIGNS_KEY, signs)
 
-  const next = { ...target, count: target.count + 1 }
+  const next = normalizePetition({ ...target, count: target.count + 1 })
   const local = loadAllLocal()
   const idx = local.findIndex((p) => p.id === id)
   if (idx >= 0) local[idx] = next
@@ -246,12 +317,16 @@ export function petitionShareUrl(id: string): string {
 export function buildWhatsAppShareText(p: AreaPetition, siteName: string): string {
   const link = petitionShareUrl(p.id)
   const progress = `${p.count}/${p.goal}`
+  const where = isNationalPetition(p)
+    ? 'South Africa (national)'
+    : p.place_label || `Zone near ${p.grid_lat}, ${p.grid_lng}`
   return [
     `*${siteName}*`,
     '',
-    `📍 ${p.title}`,
+    isNationalPetition(p) ? `🇿🇦 ${p.title}` : `📍 ${p.title}`,
     p.ask,
     '',
+    `Where: ${where}`,
     `✍️ Signatures: ${progress}`,
     p.count >= p.goal ? '✅ Goal reached — download the pack on the site.' : 'Please sign and share.',
     '',
@@ -271,7 +346,11 @@ export function downloadPetitionPack(p: AreaPetition, siteName: string) {
   doc.setFontSize(16)
   doc.text(siteName, 14, 20)
   doc.setFontSize(12)
-  doc.text('Area petition pack', 14, 28)
+  doc.text(
+    isNationalPetition(p) ? 'National petition pack' : 'Area petition pack',
+    14,
+    28,
+  )
   doc.setFontSize(11)
   const title = doc.splitTextToSize(p.title, 180)
   doc.text(title, 14, 40)
@@ -281,20 +360,35 @@ export function downloadPetitionPack(p: AreaPetition, siteName: string) {
   y += ask.length * 6 + 8
   doc.text(`Signatures: ${p.count} (goal was ${p.goal})`, 14, y)
   y += 8
-  doc.text(`Area grid: ${p.grid_lat}, ${p.grid_lng}`, 14, y)
+  if (isNationalPetition(p)) {
+    doc.text('Scope: National (South Africa)', 14, y)
+  } else {
+    const place = p.place_label || `Grid ${p.grid_lat}, ${p.grid_lng}`
+    doc.text(`Area: ${place}`, 14, y)
+    y += 8
+    doc.text(`Grid: ${p.grid_lat}, ${p.grid_lng}`, 14, y)
+  }
   y += 8
   doc.text(`Created: ${p.created_at.slice(0, 10)}`, 14, y)
   y += 12
   doc.setFontSize(9)
   const note = doc.splitTextToSize(
-    'Anonymous community ask for patrols, lights, or safety help in this area — not for arrests by name. Share with CPF, ward councillor, or someone who can act.',
+    'Anonymous community ask for patrols, lights, or safety help — not for arrests by name. Share with CPF, ward councillor, or someone who can act.',
     180,
   )
   doc.text(note, 14, y)
   doc.save(`the-voices-petition-${p.id.slice(0, 8)}.pdf`)
 }
 
-/** Petitions near a grid key (same cell) */
+/** Area petitions for a map cell (excludes national). */
 export function petitionsForCell(list: AreaPetition[], key: string): AreaPetition[] {
-  return list.filter((p) => p.grid_key === key)
+  return list.filter((p) => !isNationalPetition(p) && p.grid_key === key)
+}
+
+export function areaPetitions(list: AreaPetition[]): AreaPetition[] {
+  return list.filter((p) => !isNationalPetition(p))
+}
+
+export function nationalPetitions(list: AreaPetition[]): AreaPetition[] {
+  return list.filter((p) => isNationalPetition(p))
 }

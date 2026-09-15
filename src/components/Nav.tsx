@@ -8,6 +8,7 @@ type Props = {
 
 const NAV_ITEMS: { id: Screen; icon: string }[] = [
   { id: 'map', icon: '◎' },
+  { id: 'petitions', icon: '▣' },
   { id: 'stats', icon: '▦' },
   { id: 'report', icon: '✎' },
   { id: 'notebook', icon: '☰' },

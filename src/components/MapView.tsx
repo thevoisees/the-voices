@@ -11,7 +11,7 @@ import { CATEGORY_MAP, roleWeight } from '../data/categories'
 import { useI18n } from '../i18n'
 import { clearDeepLinkParams, openWhatsAppSpotShare, spotShareUrl } from '../lib/deeplink'
 import { gridKey } from '../lib/grid'
-import { petitionsForCell } from '../lib/petitions'
+import { petitionsForCell, areaPetitions } from '../lib/petitions'
 import { flagReport, hasFlaggedReport } from '../lib/reports'
 import type { AreaPetition, CategoryId, Report } from '../types'
 import type { MissingPerson } from '../types-missing'
@@ -19,7 +19,9 @@ import { CellDetail } from './CellDetail'
 import { MapGuide } from './MapGuide'
 import { MissingBoard } from './MissingBoard'
 import { MissingStrip } from './MissingStrip'
+import { PetitionBoard } from './PetitionBoard'
 import { PetitionSheet } from './PetitionSheet'
+import { PetitionStrip } from './PetitionStrip'
 import 'leaflet/dist/leaflet.css'
 
 type TimeFilter = '7' | '30' | '90' | 'all'
@@ -33,6 +35,8 @@ type Props = {
   onGoReport?: () => void
   initialSpotKey?: string | null
   initialPetitionId?: string | null
+  focusSpotKey?: string | null
+  onFocusSpotConsumed?: () => void
   pickMode?: boolean
   onPick?: (lat: number, lng: number) => void
   pickLat?: number | null
@@ -88,6 +92,8 @@ export function MapView({
   onGoReport,
   initialSpotKey,
   initialPetitionId,
+  focusSpotKey,
+  onFocusSpotConsumed,
   pickMode,
   onPick,
   pickLat,
@@ -101,6 +107,7 @@ export function MapView({
   const [guideOpen, setGuideOpen] = useState(false)
   const [missingOpen, setMissingOpen] = useState(false)
   const [petitionOpen, setPetitionOpen] = useState(Boolean(initialPetitionId))
+  const [petitionBoardOpen, setPetitionBoardOpen] = useState(false)
   const [focusPetitionId, setFocusPetitionId] = useState<string | null>(
     initialPetitionId ?? null,
   )
@@ -157,6 +164,21 @@ export function MapView({
 
   const selected = selectedKey ? cells.find((c) => c.key === selectedKey) : null
   const cellPetitions = selected ? petitionsForCell(petitions, selected.key) : []
+  const petitionKeys = useMemo(
+    () => new Set(areaPetitions(petitions).map((p) => p.grid_key)),
+    [petitions],
+  )
+
+  function openPetitionById(id: string) {
+    const p = petitions.find((x) => x.id === id)
+    if (!p) return
+    setPetitionBoardOpen(false)
+    setSelectedKey(p.grid_key)
+    setFocusPetitionId(p.id)
+    setPetitionOpen(true)
+    setFlyTo([p.grid_lat, p.grid_lng])
+    setFlyZoom(15)
+  }
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -187,6 +209,27 @@ export function MapView({
       clearDeepLinkParams()
     }
   }, [initialPetitionId, initialSpotKey, petitions, cells])
+
+  useEffect(() => {
+    if (!focusSpotKey) return
+    setGuideOpen(false)
+    setPetitionOpen(false)
+    setSelectedKey(focusSpotKey)
+    const cell = cells.find((c) => c.key === focusSpotKey)
+    if (cell) {
+      setFlyTo([cell.lat, cell.lng])
+      setFlyZoom(15)
+    } else {
+      const [a, b] = focusSpotKey.split('_')
+      const lat = Number(a)
+      const lng = Number(b)
+      if (!Number.isNaN(lat) && !Number.isNaN(lng)) {
+        setFlyTo([lat, lng])
+        setFlyZoom(15)
+      }
+    }
+    onFocusSpotConsumed?.()
+  }, [focusSpotKey, cells, onFocusSpotConsumed])
 
   function toggleCat(id: CategoryId) {
     setCatFilter((prev) => {
@@ -288,6 +331,11 @@ export function MapView({
       {!pickMode && (
         <div className="map-side map-side-desktop">
           <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+          <PetitionStrip
+            petitions={petitions}
+            onOpen={() => setPetitionBoardOpen(true)}
+            onOpenOne={openPetitionById}
+          />
           {guide}
         </div>
       )}
@@ -302,17 +350,35 @@ export function MapView({
               </button>
               <button
                 type="button"
+                className="map-chrome-btn map-chrome-btn-petition"
+                onClick={() => setPetitionBoardOpen(true)}
+              >
+                {t.map.petitionsChrome}
+                {petitions.length > 0 ? ` (${petitions.length})` : ''}
+              </button>
+              <button
+                type="button"
                 className="map-chrome-btn"
                 onClick={() => setGuideOpen(true)}
               >
                 {t.map.openGuide}
               </button>
             </div>
+            {petitions.length > 0 ? (
+              <p className="map-chrome-petition-hint">{t.map.petitionMapHint}</p>
+            ) : null}
           </div>
         )}
 
         {!pickMode && (
-          <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+          <>
+            <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+            <PetitionStrip
+              petitions={petitions}
+              onOpen={() => setPetitionBoardOpen(true)}
+              onOpenOne={openPetitionById}
+            />
+          </>
         )}
 
         <MapContainer
@@ -327,29 +393,56 @@ export function MapView({
           />
           <MapController center={flyTo} zoom={flyZoom} />
           {pickMode && onPick ? <PickHandler onPick={onPick} /> : null}
-          {cells.map((cell) => (
-            <CircleMarker
-              key={cell.key}
-              center={[cell.lat, cell.lng]}
-              radius={Math.min(10 + cell.heat * 3, 28)}
-              pathOptions={{
-                color: cell.primaryColor,
-                fillColor: cell.primaryColor,
-                fillOpacity: 0.72,
-                weight: 2,
-              }}
-              eventHandlers={{
-                click: () => {
-                  if (pickMode && onPick) {
-                    onPick(cell.lat, cell.lng)
-                    return
-                  }
-                  setGuideOpen(false)
-                  setSelectedKey(cell.key)
-                },
-              }}
-            />
-          ))}
+          {cells.map((cell) => {
+            const hasPetition = petitionKeys.has(cell.key)
+            return (
+              <CircleMarker
+                key={cell.key}
+                center={[cell.lat, cell.lng]}
+                radius={Math.min(10 + cell.heat * 3, 28)}
+                pathOptions={{
+                  color: hasPetition ? '#5c2d91' : cell.primaryColor,
+                  fillColor: cell.primaryColor,
+                  fillOpacity: 0.72,
+                  weight: hasPetition ? 4 : 2,
+                }}
+                eventHandlers={{
+                  click: () => {
+                    if (pickMode && onPick) {
+                      onPick(cell.lat, cell.lng)
+                      return
+                    }
+                    setGuideOpen(false)
+                    setPetitionBoardOpen(false)
+                    setSelectedKey(cell.key)
+                  },
+                }}
+              />
+            )
+          })}
+          {!pickMode &&
+            cells
+              .filter((c) => petitionKeys.has(c.key))
+              .map((cell) => (
+                <CircleMarker
+                  key={`pet-${cell.key}`}
+                  center={[cell.lat, cell.lng]}
+                  radius={Math.min(16 + cell.heat * 3, 34)}
+                  pathOptions={{
+                    color: '#5c2d91',
+                    fillOpacity: 0,
+                    weight: 2,
+                    dashArray: '5 4',
+                  }}
+                  eventHandlers={{
+                    click: () => {
+                      setGuideOpen(false)
+                      setPetitionBoardOpen(false)
+                      setSelectedKey(cell.key)
+                    },
+                  }}
+                />
+              ))}
           {pickMode && pickLat != null && pickLng != null ? (
             <CircleMarker
               center={[pickLat, pickLng]}
@@ -359,11 +452,14 @@ export function MapView({
           ) : null}
         </MapContainer>
 
-        {!pickMode && !selected && (
-          <p className="map-tap-hint">{t.map.tapSpot}</p>
+        {!pickMode && !selected && !petitionBoardOpen && !petitionOpen && (
+          <p className="map-tap-hint">
+            {t.map.tapSpot}
+            {petitions.length > 0 ? ` · ${t.map.petitionMapHint}` : ''}
+          </p>
         )}
 
-        {selected && !pickMode && !petitionOpen ? (
+        {selected && !pickMode && !petitionOpen && !petitionBoardOpen ? (
           <CellDetail
             reports={selected.reports}
             petitionCount={cellPetitions.length}
@@ -398,6 +494,21 @@ export function MapView({
             people={missingPeople}
             onClose={() => setMissingOpen(false)}
             onChange={onMissingChange}
+          />
+        ) : null}
+
+        {petitionBoardOpen && !pickMode && !petitionOpen ? (
+          <PetitionBoard
+            petitions={petitions}
+            onClose={() => setPetitionBoardOpen(false)}
+            onSelect={(p) => openPetitionById(p.id)}
+            canStartHere={Boolean(selected)}
+            onStartHere={() => {
+              if (!selected) return
+              setPetitionBoardOpen(false)
+              setFocusPetitionId(null)
+              setPetitionOpen(true)
+            }}
           />
         ) : null}
 

@@ -130,12 +130,17 @@ export function CellDetail({
         <p className="hint">{t.map.noText}</p>
       )}
 
-      <p className="petition-line">
-        {t.map.petitioned}: <strong>{petitionCount}</strong>
-      </p>
-      <button type="button" className="primary" onClick={onOpenPetitions}>
-        {t.map.petition}
-      </button>
+      <div className="cell-petition-block">
+        <p className="cell-meta-label">{t.map.petitionAction}</p>
+        <p className="petition-line">
+          {petitionCount > 0
+            ? t.map.petitionOpenCount.replace('{n}', String(petitionCount))
+            : t.map.petitionNoneHere}
+        </p>
+        <button type="button" className="primary" onClick={onOpenPetitions}>
+          {petitionCount > 0 ? t.map.petition : t.map.startPetition}
+        </button>
+      </div>
       <button type="button" className="secondary" onClick={onShareSpot}>
         {t.map.shareSpot}
       </button>

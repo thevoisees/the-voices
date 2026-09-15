@@ -5,14 +5,16 @@ import { IntroGate } from './components/IntroGate'
 import { MapView } from './components/MapView'
 import { BottomNav, TopBar } from './components/Nav'
 import { Notebook } from './components/Notebook'
+import { PetitionsPage } from './components/PetitionsPage'
 import { ReportForm } from './components/ReportForm'
 import { Statistics } from './components/Statistics'
 import { getDict, I18nContext } from './i18n'
+import { fetchAnnouncements } from './lib/announcements'
 import { readDeepLink } from './lib/deeplink'
 import { fetchMissingPeople } from './lib/missing'
 import { fetchPetitions } from './lib/petitions'
 import { fetchReports } from './lib/reports'
-import type { AreaPetition, Lang, Report, Screen } from './types'
+import type { AreaPetition, CommunityAnnouncement, Lang, Report, Screen } from './types'
 import type { MissingPerson } from './types-missing'
 
 const LANG_KEY = 'thevoices_lang'
@@ -27,9 +29,11 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>('map')
   const [reports, setReports] = useState<Report[]>([])
   const [petitions, setPetitions] = useState<AreaPetition[]>([])
+  const [announcements, setAnnouncements] = useState<CommunityAnnouncement[]>([])
   const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([])
   const [loading, setLoading] = useState(true)
   const [deepLink] = useState(() => readDeepLink())
+  const [focusSpotKey, setFocusSpotKey] = useState<string | null>(null)
 
   const t = useMemo(() => getDict(lang), [lang])
 
@@ -48,16 +52,23 @@ export default function App() {
     setPetitions(p)
   }, [])
 
+  const refreshAnnouncements = useCallback(async () => {
+    const a = await fetchAnnouncements()
+    setAnnouncements(a)
+  }, [])
+
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [r, p, m] = await Promise.all([
+    const [r, p, m, a] = await Promise.all([
       fetchReports(),
       fetchPetitions(),
       fetchMissingPeople(),
+      fetchAnnouncements(),
     ])
     setReports(r)
     setPetitions(p)
     setMissingPeople(m)
+    setAnnouncements(a)
     setLoading(false)
   }, [])
 
@@ -95,8 +106,22 @@ export default function App() {
                   onGoReport={() => setScreen('report')}
                   initialSpotKey={deepLink.spotKey}
                   initialPetitionId={deepLink.petitionId}
+                  focusSpotKey={focusSpotKey}
+                  onFocusSpotConsumed={() => setFocusSpotKey(null)}
                 />
               ))}
+            {screen === 'petitions' && (
+              <PetitionsPage
+                petitions={petitions}
+                announcements={announcements}
+                onChange={() => void refreshPetitions()}
+                onAnnouncementsChange={() => void refreshAnnouncements()}
+                onOpenOnMap={(key) => {
+                  setFocusSpotKey(key)
+                  setScreen('map')
+                }}
+              />
+            )}
             {screen === 'report' && (
               <ReportForm
                 onSubmitted={() => {
@@ -105,7 +130,14 @@ export default function App() {
               />
             )}
             {screen === 'stats' && (
-              <Statistics reports={reports} missingPeople={missingPeople} />
+              <Statistics
+                reports={reports}
+                missingPeople={missingPeople}
+                onOpenArea={(key) => {
+                  setFocusSpotKey(key)
+                  setScreen('map')
+                }}
+              />
             )}
             {screen === 'notebook' && <Notebook />}
             {screen === 'about' && <About />}
