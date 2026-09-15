@@ -16,6 +16,7 @@ export const st: Dict = {
     report: 'Tlaleha',
     notebook: 'Buka',
     about: 'Ka',
+    more: 'Tse ling',
   },
   emergency: {
     title: 'O kotsing hona joale?',

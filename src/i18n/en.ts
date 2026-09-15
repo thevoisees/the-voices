@@ -14,6 +14,7 @@ export const en = {
     report: 'Report',
     notebook: 'Notebook',
     about: 'About',
+    more: 'More',
   },
   emergency: {
     title: 'In danger now?',
@@ -67,7 +68,7 @@ export const en = {
     heatNote: 'Spots grow stronger when the person it happened to reports.',
     loading: 'Loading map…',
     spotsSummary: '{count} spots on the map',
-    openGuide: 'What’s on the map',
+    openGuide: 'Map guide',
     closeGuide: 'Close',
     tapSpot: 'Tap a coloured spot to see what was reported there',
     spotWhen: 'When',

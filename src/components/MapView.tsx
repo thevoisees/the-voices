@@ -343,7 +343,9 @@ export function MapView({
       <div className="map-stage">
         {!pickMode && (
           <div className="map-chrome">
-            <p className="map-chrome-summary">{summary}</p>
+            <div className="map-chrome-row">
+              <p className="map-chrome-summary">{summary}</p>
+            </div>
             <div className="map-chrome-actions">
               <button type="button" className="map-chrome-btn" onClick={goNearMe}>
                 {t.map.nearMe}
@@ -371,14 +373,14 @@ export function MapView({
         )}
 
         {!pickMode && (
-          <>
+          <div className="map-rail">
             <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
             <PetitionStrip
               petitions={petitions}
               onOpen={() => setPetitionBoardOpen(true)}
               onOpenOne={openPetitionById}
             />
-          </>
+          </div>
         )}
 
         <MapContainer

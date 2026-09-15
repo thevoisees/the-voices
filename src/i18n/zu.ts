@@ -16,6 +16,7 @@ export const zu: Dict = {
     report: 'Bika',
     notebook: 'Incwadi',
     about: 'Mayelana',
+    more: 'Okunye',
   },
   emergency: {
     title: 'Usengozini manje?',
