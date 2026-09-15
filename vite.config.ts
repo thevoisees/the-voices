@@ -5,4 +5,11 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   plugins: [react()],
   base: './',
+  preview: {
+    // Allow Cloudflare quick tunnels / phone testing
+    allowedHosts: true,
+  },
+  server: {
+    allowedHosts: true,
+  },
 })
