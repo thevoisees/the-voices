@@ -1,5 +1,3 @@
--- Prefer supabase/migrations/ for GitHub→Supabase deploy. This file mirrors the latest migration for SQL Editor paste.
-
 -- The Voices: reports, petitions, missing persons, photo bucket
 -- Applied via Supabase GitHub integration / db push
 
