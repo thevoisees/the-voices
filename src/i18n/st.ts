@@ -110,16 +110,9 @@ export const st: Dict = {
     contactPlaceholder: 'mohl. nomoro ea nyeoe ea SAPS',
     markMap: 'Tšoaea sebaka sa qetello mapeng (boikhethelo)',
     reportWarn: 'Tlaleha feela motho ea lahlehileng ka nnete. Linepe ke bakeng sa ho fumana — eseng ho reha moqosuoa.',
-    githubNote:
-      'Ha Supabase e hokahane, bohle ba bona foto. U ka khoasolla pack ea GitHub ho boloka kopi public/missing/.',
-    githubNoteLocal:
-      'Supabase e koetsoe — foto e sala fonong ena. Khoasolla pack ea GitHub ebe u e kenya hore sebaka se bontše sefahleho.',
-    downloadGithub: 'Khoasolla lifaele tsa GitHub',
     submit: 'Romela tlaleho ea ho lahleha',
     submitting: 'E boloka…',
-    success:
-      'E bolokiloe fonong ena feela. Khoasolla pack ea GitHub (kapa hokahanya Supabase) hore ba bang ba bone.',
-    successShared: 'E teng bakeng sa bohle — foto e storage. Ba tla e bona striping.',
+    success: 'E boardeng. Kea leboha.',
     needPhoto: 'Ka kopo kenya foto.',
     needFields: 'Lebitso, sebaka le foto lia hlokahala.',
     photoFail: 'Foto ha ea baloa. Leka e \'ngoe.',
@@ -197,26 +190,10 @@ export const st: Dict = {
     body1:
       'The Voices e etsa mapa ea dibaka le mekhoa hore basali le bana ba bone moo litlaleho li bokellanang. Ha re phatlalatse mabitso, lifahleho, kapa lipoleiti mapeng a sa tsejoeng.',
     body2:
-      'Buka ea lekunutu ke ea hau feela. Likopo tsa sebaka li kopa mabone le paterole — eseng ho tšoaroa ho sa tsejoeng. Board ea ba lahlehileng ke eona feela e ka bontšang lebitso le foto.',
-    sharingTitle: 'Ho arolelana (Supabase)',
-    sharingOn:
-      'Supabase e hokahane. Litlaleho, ba lahlehileng, linepe le lilvoto li tsamaisana lifonong.',
-    sharingOff:
-      'Supabase ha e hokahane — build ena ke ea fono ena feela. Bona README / scripts/configure-supabase.mjs.',
-    sharingHow:
-      'Theha projeke ea Supabase → sebetsa schema.sql → kenya URL le anon key ho .env le GitHub secrets → deploy hape.',
-    photosTitle: 'Linepe tsa ba lahlehileng li bonoa joang',
-    photosBody:
-      'Motho o kenya foto → Cloudinary (kapa Supabase) ea e boloka → bohle ba e bona striping. Mabitso le linepe ke board ea Missing feela.',
-    photosSteps: [
-      'Kenya → Cloudinary e boloka → strip e bontša bohle.',
-      'Tobetsa sefahleho bakeng sa lebitso le sebaka.',
-      'Lintlha li tsamaisana ka Supabase.',
-      'O fumanoe: lifono tse 10 li tlameha ho netefatsa.',
-    ],
-    cloudinaryOn: 'Cloudinary e hlophisitsoe bakeng sa linepe.',
-    cloudinaryOff:
-      'Cloudinary ha e hlophisoe — theha preset “the_voices_missing” (Unsigned) ho dmhftsl2x.',
+      'Buka ea lekunutu ke ea hau feela. Ha re e bale. Likopo tsa sebaka li kopa mabone le paterole — eseng ho tšoaroa ho sa tsejoeng.',
+    missingTitle: 'Ba lahlehileng',
+    missingBody:
+      'Board ea ba lahlehileng ke eona feela e ka bontšang lebitso le foto — ho thusa ho fumana motho. Tobetsa lifahleho mapeng bakeng sa lenane. Haeba u tseba hore o fumanoe, u ka netefatsa a phela kapa a shoele.',
     hardNos: 'Lintho tse thibetsoeng',
     nos: [
       'Ha ho mabitso litlalehong tse sa tsejoeng',
@@ -226,7 +203,8 @@ export const st: Dict = {
       'Ha ho liaterese tsa matlo',
       'Linepe tsa board ea ba lahlehileng: ho fumana feela',
     ],
-    role: 'Haeba u tsamaisa sebaka sena: pata mela e nang le mabitso. Se ke oa boloka notebook sevaeng.',
+    solidarity:
+      'Bopherese mona bo sebelisoa ka solidarity le Purple Movement le mosebetsi oa basali. The Voices ha se sehlahiswa sa semmuso sa Women for Change.',
   },
   categories: {
     followed: 'Lateloa / pota-pota',

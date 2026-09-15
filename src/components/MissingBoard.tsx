@@ -3,14 +3,12 @@ import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leafl
 import { useI18n } from '../i18n'
 import { snapToGrid } from '../lib/grid'
 import {
-  downloadGithubPack,
   hasVoted,
   prepareMissingPhoto,
   resolvePhotoUrl,
   submitMissingPerson,
   verifyFound,
 } from '../lib/missing'
-import { supabaseConfigured } from '../lib/supabase'
 import type { AffectedGender } from '../types'
 import type { FoundOutcome, MissingPerson } from '../types-missing'
 import { MISSING_VERIFY_THRESHOLD } from '../types-missing'
@@ -104,7 +102,7 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
       setStatus(t.missing.needFields)
       return
     }
-    setStatus(res.shared ? t.missing.successShared : t.missing.success)
+    setStatus(t.missing.success)
     setName('')
     setPhoto(null)
     setPlace('')
@@ -300,16 +298,6 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                 )}
               </div>
             ) : null}
-
-            {selected.photo.startsWith('data:') || selected.source === 'local' ? (
-              <button
-                type="button"
-                className="secondary"
-                onClick={() => downloadGithubPack(selected)}
-              >
-                {t.missing.downloadGithub}
-              </button>
-            ) : null}
           </div>
         ) : null}
 
@@ -421,10 +409,6 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                 placeholder={t.missing.contactPlaceholder}
               />
             </label>
-
-            <p className="hint">
-              {supabaseConfigured ? t.missing.githubNote : t.missing.githubNoteLocal}
-            </p>
 
             <button type="submit" className="primary" disabled={busy}>
               {busy ? t.missing.submitting : t.missing.submit}

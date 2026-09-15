@@ -110,16 +110,9 @@ export const zu: Dict = {
     contactPlaceholder: 'isib. inombolo yecala ye-SAPS',
     markMap: 'Maka indawo yokugcina emephini (okukhethekile)',
     reportWarn: 'Bika kuphela umuntu olahlekile ngempela. Izithombe zokuthola — hhayi ukumaka umsolwa.',
-    githubNote:
-      'Uma i-Supabase ixhumekile, wonke umuntu uyabona isithombe. Ungalanda ipakethe ye-GitHub ukuze ugcine ikhophi ku-public/missing/.',
-    githubNoteLocal:
-      'I-Supabase icishiwe — isithombe sihlezi kule foni. Landa ipakethe ye-GitHub bese uyifaka ukuze isayithi ibonise ubuso.',
-    downloadGithub: 'Landa amafayela e-GitHub',
     submit: 'Thumela umbiko wokulahleka',
     submitting: 'Iyalondoloza…',
-    success:
-      'Kulondoloziwe kule foni kuphela. Landa ipakethe ye-GitHub (noma xhuma i-Supabase) ukuze abanye babone.',
-    successShared: 'Kubonakala kuwo wonke umuntu — isithombe sikustorage. Bazosibona ku-strip.',
+    success: 'Kubhodini. Ngiyabonga.',
     needPhoto: 'Sicela wengeze isithombe.',
     needFields: 'Igama, indawo, nesithombe kuyadingeka.',
     photoFail: 'Isithombe asifundekanga. Zama esinye.',
@@ -197,26 +190,10 @@ export const zu: Dict = {
     body1:
       'I-The Voices imepha izindawo namaphethini ukuze abesifazane nezingane babone lapho imibiko iqoqana khona. Asishicileli amagama, ubuso, noma amapleyiti emephini engaziwa.',
     body2:
-      'Incwadi yangasese ngeyakho wedwa. Izicelo zendawo zicela ukukhanya nokugada — hhayi ukuboshwa okungaziwa. Ibhodi labalahlekile kuphela elingabonisa igama nesithombe.',
-    sharingTitle: 'Ukwabelana (Supabase)',
-    sharingOn:
-      'I-Supabase ixhumekile. Imibiko, abalahlekile, izithombe, namavoti ayahambisana kuma-foni.',
-    sharingOff:
-      'I-Supabase ayixhumekile — le build isebenza kule foni kuphela. Bona i-README / scripts/configure-supabase.mjs.',
-    sharingHow:
-      'Dala i-project ye-Supabase → gijima i-schema.sql → faka i-URL ne-anon key ku-.env nase-GitHub secrets → deploy kabusha.',
-    photosTitle: 'Izithombe zabalahlekile zibonwa kanjani',
-    photosBody:
-      'Othile ulayisha isithombe → i-Cloudinary (noma i-Supabase) iyigcina → wonke umuntu uyabona ku-strip. Amagama nezithombe kwi-Missing board kuphela.',
-    photosSteps: [
-      'Layisha → i-Cloudinary igcina → i-strip ibonisa kuwo wonke umuntu.',
-      'Thepha ubuso ukuze ubone igama nendawo.',
-      'Imininingwane ihambisana nge-Supabase.',
-      'Utholiwe: amafoni ayi-10 kufanele aqinisekise.',
-    ],
-    cloudinaryOn: 'I-Cloudinary isethiwe ezithombeni.',
-    cloudinaryOff:
-      'I-Cloudinary ayakalungi — dala i-preset “the_voices_missing” (Unsigned) ku-dmhftsl2x.',
+      'Incwadi yangasese ngeyakho wedwa. Asiyifundi. Izicelo zendawo zicela ukukhanya nokugada — hhayi ukuboshwa okungaziwa.',
+    missingTitle: 'Abalahlekile',
+    missingBody:
+      'Ibhodi labalahlekile kuphela elingabonisa igama nesithombe — ukuze kutholakale umuntu. Thepha ubuso emephini ukuze ubone uhlu. Uma wazi ukuthi utholiwe, ungaqinisekisa ukuthi uphila noma ushonile.',
     hardNos: 'Okungavunyelwe',
     nos: [
       'Akukho amagama emibikweni engaziwa',
@@ -226,7 +203,8 @@ export const zu: Dict = {
       'Akukho amakheli ezindlu',
       'Izithombe zebhodi labalahlekile: ukuthola kuphela',
     ],
-    role: 'Uma uphethe lesi siza: fihla imigqa enegama. Ungalondolozi i-notebook kuseva.',
+    solidarity:
+      'Okunsomi lapha kusetshenziswa ngokuzwana ne-Purple Movement nomsebenzi wabesifazane. I-The Voices akuyona umkhiqizo osemthethweni we-Women for Change.',
   },
   categories: {
     followed: 'Ulandelwe / uzungeziwe',

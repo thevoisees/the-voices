@@ -1,6 +1,4 @@
 import { useI18n } from '../i18n'
-import { cloudinaryConfigured } from '../lib/cloudinary'
-import { supabaseConfigured } from '../lib/supabase'
 
 export function About() {
   const { t } = useI18n()
@@ -11,22 +9,8 @@ export function About() {
         <p>{t.about.body1}</p>
         <p>{t.about.body2}</p>
 
-        <h2>{t.about.sharingTitle}</h2>
-        <p className={supabaseConfigured ? 'banner success' : 'banner warn'}>
-          {supabaseConfigured ? t.about.sharingOn : t.about.sharingOff}
-        </p>
-        <p className="hint">{t.about.sharingHow}</p>
-
-        <h2>{t.about.photosTitle}</h2>
-        <p className={cloudinaryConfigured ? 'banner success' : 'banner warn'}>
-          {cloudinaryConfigured ? t.about.cloudinaryOn : t.about.cloudinaryOff}
-        </p>
-        <p>{t.about.photosBody}</p>
-        <ol className="about-steps">
-          {t.about.photosSteps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
+        <h2>{t.about.missingTitle}</h2>
+        <p>{t.about.missingBody}</p>
 
         <h2>{t.about.hardNos}</h2>
         <ul>
@@ -34,7 +18,7 @@ export function About() {
             <li key={n}>{n}</li>
           ))}
         </ul>
-        <p className="hint">{t.about.role}</p>
+        <p className="hint">{t.about.solidarity}</p>
       </article>
     </div>
   )

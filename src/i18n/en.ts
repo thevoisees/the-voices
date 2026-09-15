@@ -109,16 +109,9 @@ export const en = {
     markMap: 'Mark last-seen area on map (optional)',
     reportWarn:
       'Only report someone who is truly missing. Photos are for finding them — not for naming alleged perpetrators.',
-    githubNote:
-      'With Supabase connected, everyone sees the photo right away. You can still download a GitHub pack to keep a copy in this repo under public/missing/.',
-    githubNoteLocal:
-      'Supabase is off — this photo stays on this phone for now. Download the GitHub pack and commit it so the whole site can show the face after Pages deploys.',
-    downloadGithub: 'Download files for GitHub',
     submit: 'Submit missing report',
     submitting: 'Saving…',
-    success:
-      'Saved on this phone only. Download the GitHub pack (or connect Supabase) so others can see the photo.',
-    successShared: 'Live for everyone — photo is on shared storage. Others will see it on the map strip.',
+    success: 'On the board. Thank you.',
     needPhoto: 'Please add a photo.',
     needFields: 'Name, place, and photo are required.',
     photoFail: 'Could not read that photo. Try another image.',
@@ -200,27 +193,10 @@ export const en = {
     body1:
       'The Voices maps places and patterns so women and children can see where reports cluster. We do not publish names, surnames, faces, number plates, schools, or workplaces on the anonymous map.',
     body2:
-      'The private notebook is yours alone. We do not read it. Area petitions ask for lights and patrols — not for anonymous arrests. The Missing persons board is the only place that may show a name and photo — to help find someone who is missing.',
-    sharingTitle: 'Live sharing (Supabase)',
-    sharingOn:
-      'Supabase is connected. New map reports, missing persons, photos, and found-votes sync across phones.',
-    sharingOff:
-      'Supabase is not connected yet — this build is local-only. Reports and photos stay on this phone until you wire a project (see README / scripts/configure-supabase.mjs).',
-    sharingHow:
-      'Create a free Supabase project → run supabase/schema.sql in the SQL Editor → put the Project URL and anon key into .env and GitHub secrets VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY → redeploy Pages.',
-    photosTitle: 'How missing photos are seen',
-    photosBody:
-      'Someone uploads a face on Report missing. The app compresses it and sends it to Cloudinary (or Supabase Storage). Every phone then loads that public photo URL on the map strip and in the list. Names + photos only live on the Missing board — not on anonymous map pins.',
-    photosSteps: [
-      'Upload → Cloudinary hosts the face → map strip shows it for everyone.',
-      'Tap a face for the full list: name, last seen, description, found votes.',
-      'Person details still sync through Supabase so all phones share the same list.',
-      'Found alive / deceased: ten separate phones must confirm the same outcome.',
-    ] as string[],
-    cloudinaryOn: 'Cloudinary is set for missing photos.',
-    cloudinaryOff:
-      'Cloudinary not configured yet — create unsigned upload preset “the_voices_missing” on cloud dmhftsl2x, then rebuild Pages.',
-
+      'The private notebook is yours alone. We do not read it. Area petitions ask for lights and patrols — not for anonymous arrests.',
+    missingTitle: 'Missing persons',
+    missingBody:
+      'The Missing board is the only place that may show a name and photo — to help find someone who is missing. Tap the faces on the map for the full list. If you know they were found, you can confirm alive or deceased so the community can update the status.',
     hardNos: 'Hard nos',
     nos: [
       'No names or nicknames on anonymous map reports',
@@ -230,7 +206,8 @@ export const en = {
       'No house addresses',
       'Missing-board photos: finding someone only — not shaming',
     ] as string[],
-    role: 'If you run this site: hide leaked identity rows in the database. Never store private notebook data on the server. Purple here is used in solidarity with the Purple Movement and the work women have done to make GBV impossible to ignore — The Voices is not an official Women for Change product.',
+    solidarity:
+      'Purple here is used in solidarity with the Purple Movement and the work women have done to make GBV impossible to ignore. The Voices is not an official Women for Change product.',
   },
   categories: {
     followed: 'Followed / circled',
