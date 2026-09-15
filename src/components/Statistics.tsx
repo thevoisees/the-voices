@@ -1,8 +1,14 @@
 import { useMemo } from 'react'
+import {
+  areaCaution,
+  isSevereCategory,
+  type AreaCaution,
+  type AreaStat,
+} from '../data/awareness'
 import { CATEGORIES, CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
-import type { AffectedGender, Report, TimeBand } from '../types'
+import type { AffectedGender, CategoryId, Report, TimeBand } from '../types'
 import type { MissingPerson } from '../types-missing'
 
 type Props = {
@@ -29,6 +35,100 @@ function genderLabel(
   if (g === 'girl') return t.report.genderGirl
   if (g === 'boy') return t.report.genderBoy
   return t.report.genderUnknown
+}
+
+function tipKeyForCategory(
+  id: CategoryId,
+):
+  | 'tipFollowed'
+  | 'tipGrabbed'
+  | 'tipHarassment'
+  | 'tipLiftWrong'
+  | 'tipRedFlag'
+  | 'tipUnsafe'
+  | 'tipMissing'
+  | 'tipRemains'
+  | 'tipBodyDump'
+  | null {
+  if (id === 'followed') return 'tipFollowed'
+  if (id === 'grabbed') return 'tipGrabbed'
+  if (id === 'harassment') return 'tipHarassment'
+  if (id === 'lift_wrong') return 'tipLiftWrong'
+  if (id === 'red_flag') return 'tipRedFlag'
+  if (id === 'unsafe_around_someone') return 'tipUnsafe'
+  if (id === 'missing') return 'tipMissing'
+  if (id === 'possible_remains') return 'tipRemains'
+  if (id === 'body_dump') return 'tipBodyDump'
+  return null
+}
+
+function tipKeyForTime(
+  tb: TimeBand,
+): 'tipMorning' | 'tipAfternoon' | 'tipEvening' | 'tipNight' {
+  if (tb === 'morning') return 'tipMorning'
+  if (tb === 'afternoon') return 'tipAfternoon'
+  if (tb === 'evening') return 'tipEvening'
+  return 'tipNight'
+}
+
+function buildAreas(reports: Report[]): AreaStat[] {
+  const map = new Map<
+    string,
+    {
+      lat: number
+      lng: number
+      reports: Report[]
+    }
+  >()
+  for (const r of reports) {
+    const key = gridKey(r.grid_lat, r.grid_lng)
+    let cell = map.get(key)
+    if (!cell) {
+      cell = { lat: r.grid_lat, lng: r.grid_lng, reports: [] }
+      map.set(key, cell)
+    }
+    cell.reports.push(r)
+  }
+
+  const areas: AreaStat[] = []
+  for (const [key, cell] of map) {
+    const byCat = countBy(cell.reports.map((r) => r.category))
+    const topCategories = [...byCat.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([c]) => c)
+
+    const times = cell.reports
+      .map((r) => r.time_band)
+      .filter((x): x is TimeBand => Boolean(x))
+    const byTime = countBy(times)
+    let topTime: TimeBand | null = null
+    let topN = 0
+    for (const [tb, n] of byTime) {
+      if (n > topN) {
+        topN = n
+        topTime = tb
+      }
+    }
+
+    const severe = cell.reports.some((r) => isSevereCategory(r.category))
+    areas.push({
+      key,
+      lat: cell.lat,
+      lng: cell.lng,
+      count: cell.reports.length,
+      topCategories,
+      topTime,
+      caution: areaCaution(cell.reports.length, severe),
+    })
+  }
+
+  return areas.sort((a, b) => {
+    const rank = (c: AreaCaution) => (c === 'caution' ? 3 : c === 'aware' ? 2 : 1)
+    const d = rank(b.caution) - rank(a.caution)
+    if (d !== 0) return d
+    return b.count - a.count
+  })
 }
 
 function BarRow({
@@ -62,38 +162,53 @@ function BarRow({
   )
 }
 
+function TipList({ tips }: { tips: string[] }) {
+  if (!tips.length) return null
+  return (
+    <ul className="stats-tips">
+      {tips.map((tip) => (
+        <li key={tip}>{tip}</li>
+      ))}
+    </ul>
+  )
+}
+
 export function Statistics({ reports, missingPeople }: Props) {
   const { t } = useI18n()
 
   const summary = useMemo(() => {
-    const spots = new Set(reports.map((r) => gridKey(r.grid_lat, r.grid_lng))).size
-    const bodyDumps = reports.filter((r) => r.category === 'body_dump').length
-    const women = reports.filter(
+    const visible = reports.filter((r) => !r.hidden)
+    const spots = new Set(visible.map((r) => gridKey(r.grid_lat, r.grid_lng))).size
+    const bodyDumps = visible.filter((r) => r.category === 'body_dump').length
+    const women = visible.filter(
       (r) => r.affected_gender === 'woman' || r.affected_gender === 'girl',
     ).length
 
-    const byCat = countBy(reports.map((r) => r.category))
+    const byCat = countBy(visible.map((r) => r.category))
     const byGender = new Map<string, number>()
-    for (const r of reports) {
+    for (const r of visible) {
       const k = r.affected_gender ?? 'not_said'
       byGender.set(k, (byGender.get(k) ?? 0) + 1)
     }
     const byTime = countBy(
-      reports
+      visible
         .map((r) => r.time_band)
         .filter((x): x is TimeBand => Boolean(x)),
     )
 
-    const stillMissing = missingPeople.filter((p) => p.status === 'missing').length
-    const foundAlive = missingPeople.filter((p) => p.status === 'found_alive').length
-    const foundDead = missingPeople.filter((p) => p.status === 'found_dead').length
+    const visibleMissing = missingPeople.filter((p) => !p.hidden)
+    const stillMissing = visibleMissing.filter((p) => p.status === 'missing').length
+    const foundAlive = visibleMissing.filter((p) => p.status === 'found_alive').length
+    const foundDead = visibleMissing.filter((p) => p.status === 'found_dead').length
+
+    const areas = buildAreas(visible)
 
     const catMax = Math.max(1, ...[...byCat.values()])
     const genderMax = Math.max(1, ...[...byGender.values()])
     const timeMax = Math.max(1, ...[...byTime.values()])
 
     return {
-      total: reports.length,
+      total: visible.length,
       spots,
       bodyDumps,
       women,
@@ -106,7 +221,8 @@ export function Statistics({ reports, missingPeople }: Props) {
       stillMissing,
       foundAlive,
       foundDead,
-      missingTotal: missingPeople.length,
+      missingTotal: visibleMissing.length,
+      areas,
     }
   }, [reports, missingPeople])
 
@@ -116,6 +232,16 @@ export function Statistics({ reports, missingPeople }: Props) {
     evening: t.report.evening,
     night: t.report.night,
   }
+
+  function levelLabel(c: AreaCaution): string {
+    if (c === 'caution') return t.stats.levelCaution
+    if (c === 'aware') return t.stats.levelAware
+    return t.stats.levelNotice
+  }
+
+  const activeCategories = CATEGORIES.filter((c) => (summary.byCat.get(c.id) ?? 0) > 0)
+  const categoriesForTips =
+    activeCategories.length > 0 ? activeCategories : CATEGORIES.filter((c) => c.id === 'body_dump')
 
   return (
     <div className="page-scroll">
@@ -143,6 +269,98 @@ export function Statistics({ reports, missingPeople }: Props) {
             <span className="stats-kpi-l">{t.stats.womenGirls}</span>
           </div>
         </div>
+
+        <section className="panel stats-section">
+          <h2>{t.stats.areasTitle}</h2>
+          <p className="hint">{t.stats.areasLead}</p>
+          {summary.areas.length === 0 ? (
+            <p className="hint">{t.stats.areasEmpty}</p>
+          ) : (
+            <ul className="stats-areas">
+              {summary.areas.slice(0, 10).map((area) => {
+                const types = area.topCategories
+                  .map((id) => t.categories[id as keyof typeof t.categories])
+                  .join(' · ')
+                return (
+                  <li key={area.key} className={`stats-area stats-area-${area.caution}`}>
+                    <div className="stats-area-head">
+                      <strong className="stats-area-watch">{t.stats.beAware}</strong>
+                      <span className={`stats-level stats-level-${area.caution}`}>
+                        {levelLabel(area.caution)}
+                      </span>
+                    </div>
+                    <p className="stats-area-zone">
+                      {t.stats.zoneLabel
+                        .replace('{lat}', area.lat.toFixed(4))
+                        .replace('{lng}', area.lng.toFixed(4))}
+                    </p>
+                    <p className="stats-area-meta">
+                      {t.stats.reportsHere.replace('{n}', String(area.count))}
+                    </p>
+                    {types ? (
+                      <p className="stats-area-meta">
+                        {t.stats.commonHere.replace('{types}', types)}
+                      </p>
+                    ) : null}
+                    {area.topTime ? (
+                      <p className="stats-area-meta">
+                        {t.stats.watchTime.replace('{time}', timeLabels[area.topTime])}
+                      </p>
+                    ) : null}
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+        </section>
+
+        <section className="panel stats-section">
+          <h2>{t.stats.measuresTitle}</h2>
+          <p className="hint">{t.stats.measuresLead}</p>
+
+          <h3 className="stats-subhead">{t.stats.measuresGeneralTitle}</h3>
+          <TipList tips={t.stats.tipGeneral} />
+
+          {summary.women > 0 ? (
+            <>
+              <h3 className="stats-subhead">{t.stats.measuresWomenTitle}</h3>
+              <TipList tips={t.stats.tipWomenGirls} />
+            </>
+          ) : null}
+
+          <h3 className="stats-subhead">{t.stats.measuresByTypeTitle}</h3>
+          {categoriesForTips.map((c) => {
+            const key = tipKeyForCategory(c.id)
+            if (!key) return null
+            const tips = t.stats[key]
+            const n = summary.byCat.get(c.id) ?? 0
+            return (
+              <div key={c.id} className="stats-measure-block">
+                <p className="stats-measure-label">
+                  <span className="swatch" style={{ background: CATEGORY_MAP[c.id].color }} />
+                  {t.categories[c.labelKey as keyof typeof t.categories]}
+                  {n > 0 ? <span className="legend-count">{n}</span> : null}
+                </p>
+                <TipList tips={tips} />
+              </div>
+            )
+          })}
+
+          <h3 className="stats-subhead">{t.stats.measuresByTimeTitle}</h3>
+          {TIMES.map((tb) => {
+            const n = summary.byTime.get(tb) ?? 0
+            if (summary.total > 0 && n === 0) return null
+            return (
+              <div key={tb} className="stats-measure-block">
+                <p className="stats-measure-label">
+                  {timeLabels[tb]}
+                  {n > 0 ? <span className="legend-count">{n}</span> : null}
+                </p>
+                <TipList tips={t.stats[tipKeyForTime(tb)]} />
+              </div>
+            )
+          })}
+        </section>
 
         <section className="panel stats-section">
           <h2>{t.stats.missingTitle}</h2>

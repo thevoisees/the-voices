@@ -1,5 +1,6 @@
 import { compressImageToDataUrl, dataUrlToJpegBlob } from './image'
 import { uploadMissingPhotoToCloudinary } from './cloudinary'
+import { DISPUTE_THRESHOLD, FLAG_THRESHOLD, getDeviceId } from './device'
 import { supabase, supabaseConfigured } from './supabase'
 import type {
   FoundOutcome,
@@ -10,24 +11,16 @@ import { MISSING_VERIFY_THRESHOLD } from '../types-missing'
 
 const LOCAL_KEY = 'thevoices_missing_people'
 const VOTES_KEY = 'thevoices_missing_votes'
-const DEVICE_KEY = 'thevoices_device_id'
+const FLAGS_KEY = 'thevoices_missing_flags'
+const DISPUTES_KEY = 'thevoices_missing_disputes'
 const CATALOG_URL = './missing/people.json'
 const PHOTO_BUCKET = 'missing-photos'
-
-function deviceId(): string {
-  let id = localStorage.getItem(DEVICE_KEY)
-  if (!id) {
-    id = crypto.randomUUID()
-    localStorage.setItem(DEVICE_KEY, id)
-  }
-  return id
-}
 
 function loadLocal(): MissingPerson[] {
   try {
     const raw = localStorage.getItem(LOCAL_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as MissingPerson[]
+    return (JSON.parse(raw) as MissingPerson[]).filter((p) => !p.hidden)
   } catch {
     return []
   }
@@ -35,6 +28,16 @@ function loadLocal(): MissingPerson[] {
 
 function saveLocal(list: MissingPerson[]) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(list))
+}
+
+function loadAllLocal(): MissingPerson[] {
+  try {
+    const raw = localStorage.getItem(LOCAL_KEY)
+    if (!raw) return []
+    return JSON.parse(raw) as MissingPerson[]
+  } catch {
+    return []
+  }
 }
 
 type VoteMap = Record<string, FoundOutcome>
@@ -50,6 +53,20 @@ function loadVotes(): VoteMap {
 
 function saveVotes(v: VoteMap) {
   localStorage.setItem(VOTES_KEY, JSON.stringify(v))
+}
+
+function loadSet(key: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(key)
+    if (!raw) return new Set()
+    return new Set(JSON.parse(raw) as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+function saveSet(key: string, s: Set<string>) {
+  localStorage.setItem(key, JSON.stringify([...s]))
 }
 
 async function fetchGithubCatalog(): Promise<MissingPerson[]> {
@@ -90,6 +107,7 @@ function mergePeople(lists: MissingPerson[][]): MissingPerson[] {
   const map = new Map<string, MissingPerson>()
   for (const list of lists) {
     for (const p of list) {
+      if (p.hidden) continue
       const prev = map.get(p.id)
       if (!prev) {
         map.set(p.id, p)
@@ -100,6 +118,8 @@ function mergePeople(lists: MissingPerson[][]): MissingPerson[] {
         ...p,
         verify_alive: Math.max(prev.verify_alive ?? 0, p.verify_alive ?? 0),
         verify_dead: Math.max(prev.verify_dead ?? 0, p.verify_dead ?? 0),
+        flag_count: Math.max(prev.flag_count ?? 0, p.flag_count ?? 0),
+        dispute_count: Math.max(prev.dispute_count ?? 0, p.dispute_count ?? 0),
         status:
           prev.status !== 'missing'
             ? prev.status
@@ -124,7 +144,6 @@ export function resolvePhotoUrl(photo: string): string {
   return `./missing/photos/${photo}`
 }
 
-/** Upload compressed JPEG to public Supabase Storage; returns public URL or null. */
 async function uploadPhotoToSupabase(id: string, dataUrl: string): Promise<string | null> {
   if (!supabaseConfigured || !supabase) return null
   const path = `${id}.jpg`
@@ -163,7 +182,6 @@ export async function submitMissingPerson(
   let photo = input.photoDataUrl
   let shared = false
 
-  // Prefer Cloudinary (public CDN) → Supabase Storage → stay as data URL on this phone
   const fromCloud = await uploadMissingPhotoToCloudinary(id, input.photoDataUrl)
   if (fromCloud) {
     photo = fromCloud
@@ -187,11 +205,14 @@ export async function submitMissingPerson(
     status: 'missing',
     verify_alive: 0,
     verify_dead: 0,
+    flag_count: 0,
+    dispute_count: 0,
+    hidden: false,
     created_at: new Date().toISOString(),
     source: 'local',
   }
 
-  const local = loadLocal()
+  const local = loadAllLocal()
   local.unshift(person)
   saveLocal(local)
 
@@ -211,6 +232,8 @@ export async function submitMissingPerson(
       status: person.status,
       verify_alive: 0,
       verify_dead: 0,
+      flag_count: 0,
+      dispute_count: 0,
       created_at: person.created_at,
       hidden: false,
     })
@@ -245,6 +268,14 @@ export function hasVoted(personId: string): FoundOutcome | null {
   return loadVotes()[personId] ?? null
 }
 
+export function hasFlaggedMissing(personId: string): boolean {
+  return loadSet(FLAGS_KEY).has(personId)
+}
+
+export function hasDisputed(personId: string): boolean {
+  return loadSet(DISPUTES_KEY).has(personId)
+}
+
 export async function verifyFound(
   personId: string,
   outcome: FoundOutcome,
@@ -266,20 +297,16 @@ export async function verifyFound(
     verify_dead: target.verify_dead + (outcome === 'dead' ? 1 : 0),
   })
 
-  const local = loadLocal()
+  const local = loadAllLocal()
   const idx = local.findIndex((p) => p.id === personId)
-  if (idx >= 0) {
-    local[idx] = { ...local[idx], ...next }
-    saveLocal(local)
-  } else {
-    local.unshift(next)
-    saveLocal(local)
-  }
+  if (idx >= 0) local[idx] = { ...local[idx], ...next }
+  else local.unshift(next)
+  saveLocal(local)
 
   if (supabaseConfigured && supabase) {
     await supabase.from('missing_found_votes').upsert({
       person_id: personId,
-      device_id: deviceId(),
+      device_id: getDeviceId(),
       outcome,
     })
     await supabase
@@ -295,29 +322,92 @@ export async function verifyFound(
   return { ok: true, person: next }
 }
 
-/** Download a pack the maintainer can drop into public/missing/ on GitHub. */
-export function downloadGithubPack(person: MissingPerson) {
-  const photoName = `${person.id}.jpg`
-  const entry = {
-    ...person,
-    photo: `./missing/photos/${photoName}`,
-    source: 'github',
-  }
-  const jsonBlob = new Blob([JSON.stringify(entry, null, 2)], {
-    type: 'application/json',
-  })
-  const a = document.createElement('a')
-  a.href = URL.createObjectURL(jsonBlob)
-  a.download = `${person.id}.json`
-  a.click()
-  URL.revokeObjectURL(a.href)
+export async function flagMissing(
+  personId: string,
+): Promise<{ ok: boolean; hidden?: boolean; error?: string }> {
+  const flagged = loadSet(FLAGS_KEY)
+  if (flagged.has(personId)) return { ok: false, error: 'already' }
 
-  if (person.photo.startsWith('data:')) {
-    const a2 = document.createElement('a')
-    a2.href = person.photo
-    a2.download = photoName
-    a2.click()
-  } else if (person.photo.startsWith('http')) {
-    window.open(person.photo, '_blank', 'noopener,noreferrer')
+  const all = loadAllLocal()
+  let person = all.find((p) => p.id === personId)
+  const liveList = await fetchMissingPeople()
+  person = person || liveList.find((p) => p.id === personId)
+  if (!person) return { ok: false, error: 'missing' }
+
+  flagged.add(personId)
+  saveSet(FLAGS_KEY, flagged)
+
+  const flag_count = (person.flag_count ?? 0) + 1
+  const hidden = flag_count >= FLAG_THRESHOLD
+  const next = { ...person, flag_count, hidden }
+
+  const local = loadAllLocal()
+  const idx = local.findIndex((p) => p.id === personId)
+  if (idx >= 0) local[idx] = next
+  else local.unshift(next)
+  saveLocal(local)
+
+  if (supabaseConfigured && supabase) {
+    await supabase.from('missing_flags').upsert({
+      person_id: personId,
+      device_id: getDeviceId(),
+    })
+    await supabase
+      .from('missing_people')
+      .update({ flag_count, hidden })
+      .eq('id', personId)
   }
+
+  return { ok: true, hidden }
+}
+
+export async function disputeFound(
+  personId: string,
+): Promise<{ ok: boolean; person?: MissingPerson; error?: string }> {
+  const disputed = loadSet(DISPUTES_KEY)
+  if (disputed.has(personId)) return { ok: false, error: 'already' }
+
+  const all = await fetchMissingPeople()
+  const target = all.find((p) => p.id === personId)
+  if (!target) return { ok: false, error: 'missing' }
+  if (target.status === 'missing') return { ok: false, error: 'not_found' }
+
+  disputed.add(personId)
+  saveSet(DISPUTES_KEY, disputed)
+
+  const dispute_count = (target.dispute_count ?? 0) + 1
+  let next: MissingPerson = { ...target, dispute_count }
+  if (dispute_count >= DISPUTE_THRESHOLD) {
+    next = {
+      ...next,
+      status: 'missing',
+      verify_alive: 0,
+      verify_dead: 0,
+      dispute_count: 0,
+    }
+  }
+
+  const local = loadAllLocal()
+  const idx = local.findIndex((p) => p.id === personId)
+  if (idx >= 0) local[idx] = next
+  else local.unshift(next)
+  saveLocal(local)
+
+  if (supabaseConfigured && supabase) {
+    await supabase.from('missing_disputes').upsert({
+      person_id: personId,
+      device_id: getDeviceId(),
+    })
+    await supabase
+      .from('missing_people')
+      .update({
+        dispute_count: next.dispute_count,
+        status: next.status,
+        verify_alive: next.verify_alive,
+        verify_dead: next.verify_dead,
+      })
+      .eq('id', personId)
+  }
+
+  return { ok: true, person: next }
 }

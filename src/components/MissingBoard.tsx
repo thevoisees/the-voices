@@ -1,8 +1,17 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet'
 import { useI18n } from '../i18n'
+import {
+  clearMissingDraft,
+  loadMissingDraft,
+  saveMissingDraft,
+} from '../lib/drafts'
 import { snapToGrid } from '../lib/grid'
 import {
+  disputeFound,
+  flagMissing,
+  hasDisputed,
+  hasFlaggedMissing,
   hasVoted,
   prepareMissingPhoto,
   resolvePhotoUrl,
@@ -21,6 +30,18 @@ type Props = {
 }
 
 type Tab = 'list' | 'report'
+
+type MissingDraft = {
+  name: string
+  gender: AffectedGender | ''
+  ageNote: string
+  place: string
+  date: string
+  desc: string
+  contact: string
+  lat: number | null
+  lng: number | null
+}
 
 function PlacePicker({ onPick }: { onPick: (lat: number, lng: number) => void }) {
   useMapEvents({
@@ -57,13 +78,44 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
 
+  useEffect(() => {
+    const draft = loadMissingDraft<MissingDraft>()
+    if (!draft) return
+    setName(draft.name ?? '')
+    setGender(draft.gender ?? '')
+    setAgeNote(draft.ageNote ?? '')
+    setPlace(draft.place ?? '')
+    setDate(draft.date ?? '')
+    setDesc(draft.desc ?? '')
+    setContact(draft.contact ?? '')
+    setLat(draft.lat ?? null)
+    setLng(draft.lng ?? null)
+    setStatus(t.drafts.restore)
+  }, [t.drafts.restore])
+
   const filtered = useMemo(() => {
     return people.filter((p) => {
+      if (p.hidden) return false
       if (filter === 'missing') return p.status === 'missing'
       if (filter === 'found') return p.status !== 'missing'
       return true
     })
   }, [people, filter])
+
+  function persistDraft() {
+    saveMissingDraft({
+      name,
+      gender,
+      ageNote,
+      place,
+      date,
+      desc,
+      contact,
+      lat,
+      lng,
+    } satisfies MissingDraft)
+    setStatus(t.drafts.saved)
+  }
 
   async function onPhoto(file: File | undefined) {
     if (!file) return
@@ -102,6 +154,7 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
       setStatus(t.missing.needFields)
       return
     }
+    clearMissingDraft()
     setStatus(t.missing.success)
     setName('')
     setPhoto(null)
@@ -131,6 +184,48 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
     }
     if (res.person) setSelected(res.person)
     setStatus(t.missing.verifyThanks)
+    onChange()
+  }
+
+  async function onFlag() {
+    if (!selected) return
+    if (hasFlaggedMissing(selected.id)) {
+      setStatus(t.missing.flagAlready)
+      return
+    }
+    const res = await flagMissing(selected.id)
+    if (!res.ok) {
+      setStatus(t.missing.flagAlready)
+      return
+    }
+    setStatus(res.hidden ? t.missing.flagHidden : t.missing.flagThanks)
+    if (res.hidden) setSelected(null)
+    onChange()
+  }
+
+  async function onDispute() {
+    if (!selected) return
+    if (hasDisputed(selected.id)) {
+      setStatus(t.missing.disputeAlready)
+      return
+    }
+    const res = await disputeFound(selected.id)
+    if (!res.ok) {
+      setStatus(
+        res.error === 'already' ? t.missing.disputeAlready : t.missing.verifyFail,
+      )
+      return
+    }
+    if (res.person) {
+      setSelected(res.person)
+      setStatus(
+        res.person.status === 'missing'
+          ? t.missing.disputeReverted
+          : t.missing.disputeThanks,
+      )
+    } else {
+      setStatus(t.missing.disputeThanks)
+    }
     onChange()
   }
 
@@ -297,6 +392,27 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                   </div>
                 )}
               </div>
+            ) : (
+              <div className="missing-verify panel">
+                {!hasDisputed(selected.id) ? (
+                  <button
+                    type="button"
+                    className="secondary"
+                    disabled={busy}
+                    onClick={() => void onDispute()}
+                  >
+                    {t.missing.dispute}
+                  </button>
+                ) : (
+                  <p className="banner info">{t.missing.disputeAlready}</p>
+                )}
+              </div>
+            )}
+
+            {!hasFlaggedMissing(selected.id) ? (
+              <button type="button" className="linkish" onClick={() => void onFlag()}>
+                {t.missing.flag}
+              </button>
             ) : null}
           </div>
         ) : null}
@@ -409,6 +525,22 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                 placeholder={t.missing.contactPlaceholder}
               />
             </label>
+
+            <div className="draft-actions">
+              <button type="button" className="secondary" onClick={persistDraft}>
+                {t.drafts.save}
+              </button>
+              <button
+                type="button"
+                className="linkish"
+                onClick={() => {
+                  clearMissingDraft()
+                  setStatus(t.drafts.clear)
+                }}
+              >
+                {t.drafts.clear}
+              </button>
+            </div>
 
             <button type="submit" className="primary" disabled={busy}>
               {busy ? t.missing.submitting : t.missing.submit}

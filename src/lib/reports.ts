@@ -1,5 +1,6 @@
 import { SEED_REPORTS } from '../data/seed'
 import type { AffectedGender, CategoryId, Report, ReporterRole, TimeBand } from '../types'
+import { FLAG_THRESHOLD, getDeviceId } from './device'
 import { snapToGrid } from './grid'
 import { stripIdentity } from './strip'
 import { supabase, supabaseConfigured } from './supabase'
@@ -73,6 +74,7 @@ function sanitizeForPublic(input: NewReportInput): Omit<Report, 'id' | 'created_
     vehicle_type: stripIdentity(input.vehicle_type),
     vehicle_direction: stripIdentity(input.vehicle_direction),
     involves_minor: input.involves_minor,
+    flag_count: 0,
   }
 }
 
@@ -138,3 +140,61 @@ export async function submitReport(input: NewReportInput): Promise<{ ok: boolean
 
   return { ok: true }
 }
+
+const REPORT_FLAGS_KEY = 'thevoices_report_flags'
+
+function loadReportFlags(): Set<string> {
+  try {
+    const raw = localStorage.getItem(REPORT_FLAGS_KEY)
+    if (!raw) return new Set()
+    return new Set(JSON.parse(raw) as string[])
+  } catch {
+    return new Set()
+  }
+}
+
+export function hasFlaggedReport(reportId: string): boolean {
+  return loadReportFlags().has(reportId)
+}
+
+export async function flagReport(
+  reportId: string,
+): Promise<{ ok: boolean; hidden?: boolean; error?: string }> {
+  const flagged = loadReportFlags()
+  if (flagged.has(reportId)) return { ok: false, error: 'already' }
+
+  const local = loadLocal()
+  let report = local.find((r) => r.id === reportId)
+  if (!report) {
+    const all = await fetchReports()
+    report = all.find((r) => r.id === reportId)
+  }
+  if (!report) return { ok: false, error: 'missing' }
+
+  flagged.add(reportId)
+  localStorage.setItem(REPORT_FLAGS_KEY, JSON.stringify([...flagged]))
+
+  const flag_count = (report.flag_count ?? 0) + 1
+  const hidden = flag_count >= FLAG_THRESHOLD
+
+  const idx = local.findIndex((r) => r.id === reportId)
+  const next = { ...report, flag_count, hidden }
+  if (idx >= 0) {
+    local[idx] = next
+    saveLocal(local)
+  } else if (hidden || report.source === 'local') {
+    local.unshift(next)
+    saveLocal(local)
+  }
+
+  if (supabaseConfigured && supabase) {
+    await supabase.from('report_flags').upsert({
+      report_id: reportId,
+      device_id: getDeviceId(),
+    })
+    await supabase.from('reports').update({ flag_count, hidden }).eq('id', reportId)
+  }
+
+  return { ok: true, hidden }
+}
+

@@ -1286,6 +1286,113 @@ a {
   transition: width 0.35s ease;
 }
 
+.stats-subhead {
+  margin: 1rem 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--purple-deep);
+}
+
+.stats-areas {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.stats-area {
+  padding: 0.75rem 0.85rem;
+  border-radius: 14px;
+  border-left: 3px solid var(--purple);
+  background: color-mix(in srgb, var(--purple-soft) 55%, transparent);
+}
+
+.stats-area-aware {
+  border-left-color: #a16207;
+  background: color-mix(in srgb, #fef3c7 70%, transparent);
+}
+
+.stats-area-caution {
+  border-left-color: #b91c1c;
+  background: color-mix(in srgb, #fee2e2 65%, transparent);
+}
+
+.stats-area-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.stats-area-watch {
+  font-size: 0.92rem;
+  color: var(--purple-deep);
+}
+
+.stats-level {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 6px;
+  background: var(--purple-soft);
+  color: var(--purple-deep);
+  white-space: nowrap;
+}
+
+.stats-level-aware {
+  background: #fde68a;
+  color: #78350f;
+}
+
+.stats-level-caution {
+  background: #fecaca;
+  color: #7f1d1d;
+}
+
+.stats-area-zone {
+  margin: 0 0 0.25rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.stats-area-meta {
+  margin: 0.1rem 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.stats-tips {
+  margin: 0.35rem 0 0.75rem;
+  padding-left: 1.15rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.stats-measure-block {
+  margin-bottom: 0.65rem;
+}
+
+.stats-measure-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.55rem 0 0.15rem;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.stats-kpis-missing {
+  margin-top: 0.65rem;
+}
+
 @media (min-width: 640px) {
   .stats-kpis {
     grid-template-columns: repeat(4, 1fr);
@@ -1564,4 +1671,77 @@ a {
     border: 1px solid var(--line);
     margin-bottom: 0.5rem;
   }
+}
+
+/* Petitions + drafts */
+.petition-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+.petition-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.petition-detail h2 {
+  margin: 0.35rem 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1.25rem;
+  color: var(--purple-deep);
+}
+
+.petition-progress {
+  margin: 0.5rem 0;
+}
+
+.petition-share-card {
+  margin: 0.35rem 0 0.75rem;
+}
+
+.petition-share-preview {
+  white-space: pre-wrap;
+  font-family: inherit;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  margin: 0.35rem 0 0.65rem;
+  padding: 0.65rem 0.75rem;
+  background: var(--bg-soft, #f7f5fb);
+  border-radius: 12px;
+  max-height: 160px;
+  overflow: auto;
+}
+
+.flag-inline {
+  display: inline;
+  margin-left: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.draft-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0.35rem 0 0.75rem;
+}
+
+.cell-detail .secondary {
+  margin-top: 0.45rem;
+  width: 100%;
+}
+
+.petition-detail .primary,
+.petition-detail .secondary {
+  width: 100%;
+  margin-top: 0.4rem;
+}
+
+.petition-detail .linkish {
+  margin-top: 0.65rem;
 }

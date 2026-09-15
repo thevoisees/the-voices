@@ -7,7 +7,6 @@ export type FoundOutcome = 'alive' | 'dead'
 export interface MissingPerson {
   id: string
   name: string
-  /** Relative GitHub Pages path (./missing/photos/…) or data URL while pending */
   photo: string
   gender: AffectedGender | null
   age_note: string | null
@@ -16,13 +15,13 @@ export interface MissingPerson {
   grid_lat: number | null
   grid_lng: number | null
   description: string | null
-  /** Case number / “call SAPS” — no private home address */
   contact_note: string | null
   status: MissingStatus
-  /** Votes that the person was seen found alive */
   verify_alive: number
-  /** Votes that the person was seen found deceased */
   verify_dead: number
+  flag_count?: number
+  dispute_count?: number
+  hidden?: boolean
   created_at: string
   source: 'github' | 'local' | 'live'
 }
@@ -40,5 +39,4 @@ export type NewMissingInput = {
   contact_note: string | null
 }
 
-/** Crowd confirmations needed before status flips to found */
 export const MISSING_VERIFY_THRESHOLD = 10

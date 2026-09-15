@@ -1,27 +1,38 @@
 import L from 'leaflet'
-import { useEffect, useMemo, useState } from 'react'
-import { CircleMarker, MapContainer, TileLayer, useMapEvents } from 'react-leaflet'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {
+  CircleMarker,
+  MapContainer,
+  TileLayer,
+  useMap,
+  useMapEvents,
+} from 'react-leaflet'
 import { CATEGORY_MAP, roleWeight } from '../data/categories'
 import { useI18n } from '../i18n'
+import { clearDeepLinkParams, openWhatsAppSpotShare, spotShareUrl } from '../lib/deeplink'
 import { gridKey } from '../lib/grid'
-import { signPetition } from '../lib/petitions'
-import type { CategoryId, Petition, Report } from '../types'
+import { petitionsForCell } from '../lib/petitions'
+import { flagReport, hasFlaggedReport } from '../lib/reports'
+import type { AreaPetition, CategoryId, Report } from '../types'
 import type { MissingPerson } from '../types-missing'
 import { CellDetail } from './CellDetail'
 import { MapGuide } from './MapGuide'
 import { MissingBoard } from './MissingBoard'
 import { MissingStrip } from './MissingStrip'
+import { PetitionSheet } from './PetitionSheet'
 import 'leaflet/dist/leaflet.css'
 
 type TimeFilter = '7' | '30' | '90' | 'all'
 
 type Props = {
   reports: Report[]
-  petitions: Petition[]
-  onPetitionsChange: (p: Petition[]) => void
+  petitions: AreaPetition[]
+  onPetitionsChange: () => void
   missingPeople: MissingPerson[]
   onMissingChange: () => void
   onGoReport?: () => void
+  initialSpotKey?: string | null
+  initialPetitionId?: string | null
   pickMode?: boolean
   onPick?: (lat: number, lng: number) => void
   pickLat?: number | null
@@ -46,6 +57,22 @@ function PickHandler({ onPick }: { onPick: (lat: number, lng: number) => void })
   return null
 }
 
+function MapController({
+  center,
+  zoom,
+}: {
+  center: [number, number] | null
+  zoom: number | null
+}) {
+  const map = useMap()
+  useEffect(() => {
+    if (center && zoom != null) {
+      map.flyTo(center, zoom, { duration: 0.8 })
+    }
+  }, [center, zoom, map])
+  return null
+}
+
 function daysAgo(n: number): Date {
   const d = new Date()
   d.setDate(d.getDate() - n)
@@ -59,6 +86,8 @@ export function MapView({
   missingPeople,
   onMissingChange,
   onGoReport,
+  initialSpotKey,
+  initialPetitionId,
   pickMode,
   onPick,
   pickLat,
@@ -67,10 +96,17 @@ export function MapView({
   const { t } = useI18n()
   const [catFilter, setCatFilter] = useState<Set<CategoryId> | 'all'>('all')
   const [timeFilter, setTimeFilter] = useState<TimeFilter>('all')
-  const [selectedKey, setSelectedKey] = useState<string | null>(null)
+  const [selectedKey, setSelectedKey] = useState<string | null>(initialSpotKey ?? null)
   const [toast, setToast] = useState<string | null>(null)
   const [guideOpen, setGuideOpen] = useState(false)
   const [missingOpen, setMissingOpen] = useState(false)
+  const [petitionOpen, setPetitionOpen] = useState(Boolean(initialPetitionId))
+  const [focusPetitionId, setFocusPetitionId] = useState<string | null>(
+    initialPetitionId ?? null,
+  )
+  const [flyTo, setFlyTo] = useState<[number, number] | null>(null)
+  const [flyZoom, setFlyZoom] = useState<number | null>(null)
+  const deepLinkApplied = useRef(false)
 
   const visibleReports = useMemo(
     () => reports.filter((r) => !r.hidden),
@@ -120,13 +156,37 @@ export function MapView({
   }, [filtered])
 
   const selected = selectedKey ? cells.find((c) => c.key === selectedKey) : null
-  const petitionCount =
-    selected && petitions.find((p) => p.grid_key === selected.key)?.count
+  const cellPetitions = selected ? petitionsForCell(petitions, selected.key) : []
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     delete (L.Icon.Default.prototype as any)._getIconUrl
   }, [])
+
+  useEffect(() => {
+    if (deepLinkApplied.current) return
+    if (initialPetitionId) {
+      const p = petitions.find((x) => x.id === initialPetitionId)
+      if (p) {
+        deepLinkApplied.current = true
+        setSelectedKey(p.grid_key)
+        setFocusPetitionId(p.id)
+        setPetitionOpen(true)
+        setFlyTo([p.grid_lat, p.grid_lng])
+        setFlyZoom(14)
+        clearDeepLinkParams()
+      }
+    } else if (initialSpotKey) {
+      deepLinkApplied.current = true
+      setSelectedKey(initialSpotKey)
+      const cell = cells.find((c) => c.key === initialSpotKey)
+      if (cell) {
+        setFlyTo([cell.lat, cell.lng])
+        setFlyZoom(14)
+      }
+      clearDeepLinkParams()
+    }
+  }, [initialPetitionId, initialSpotKey, petitions, cells])
 
   function toggleCat(id: CategoryId) {
     setCatFilter((prev) => {
@@ -139,22 +199,43 @@ export function MapView({
     })
   }
 
-  async function handlePetition() {
-    if (!selected) return
-    const res = await signPetition(selected.lat, selected.lng)
-    const key = selected.key
-    const others = petitions.filter((p) => p.grid_key !== key)
-    onPetitionsChange([
-      ...others,
-      {
-        grid_key: key,
-        count: res.count,
-        grid_lat: selected.lat,
-        grid_lng: selected.lng,
+  function goNearMe() {
+    if (!navigator.geolocation) return
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setFlyTo([pos.coords.latitude, pos.coords.longitude])
+        setFlyZoom(13)
       },
-    ])
-    setToast(t.map.petitionThanks)
+      () => setToast(t.map.tapHint),
+      { enableHighAccuracy: false, timeout: 10000 },
+    )
+  }
+
+  function goOverview() {
+    setFlyTo([-26.1, 28.22])
+    setFlyZoom(10)
+  }
+
+  async function onFlagReport(reportId: string) {
+    if (hasFlaggedReport(reportId)) {
+      setToast(t.map.flagAlready)
+      setTimeout(() => setToast(null), 2000)
+      return
+    }
+    const res = await flagReport(reportId)
+    setToast(res.hidden ? t.map.flagHidden : res.ok ? t.map.flagThanks : t.map.flagAlready)
     setTimeout(() => setToast(null), 2500)
+    onPetitionsChange()
+  }
+
+  function onShareSpot() {
+    if (!selected) return
+    const url = spotShareUrl(selected.key)
+    void navigator.clipboard?.writeText(url).then(() => {
+      setToast(t.map.shareSpotCopied)
+      setTimeout(() => setToast(null), 2000)
+    })
+    openWhatsAppSpotShare(selected.key, t.appName)
   }
 
   const summary = t.map.spotsSummary.replace('{count}', String(cells.length))
@@ -189,6 +270,14 @@ export function MapView({
             </button>
           ))}
         </div>
+        <div className="chip-row" style={{ marginTop: '0.5rem' }}>
+          <button type="button" className="chip" onClick={goNearMe}>
+            {t.map.nearMe}
+          </button>
+          <button type="button" className="chip" onClick={goOverview}>
+            {t.map.overview}
+          </button>
+        </div>
         <p className="hint">{t.map.tapHint}</p>
       </div>
     </>
@@ -196,22 +285,29 @@ export function MapView({
 
   return (
     <div className={`map-layout ${pickMode ? 'pick-mode' : ''}`}>
-      {!pickMode && <div className="map-side map-side-desktop">
-        <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
-        {guide}
-      </div>}
+      {!pickMode && (
+        <div className="map-side map-side-desktop">
+          <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+          {guide}
+        </div>
+      )}
 
       <div className="map-stage">
         {!pickMode && (
           <div className="map-chrome">
             <p className="map-chrome-summary">{summary}</p>
-            <button
-              type="button"
-              className="map-chrome-btn"
-              onClick={() => setGuideOpen(true)}
-            >
-              {t.map.openGuide}
-            </button>
+            <div className="map-chrome-actions">
+              <button type="button" className="map-chrome-btn" onClick={goNearMe}>
+                {t.map.nearMe}
+              </button>
+              <button
+                type="button"
+                className="map-chrome-btn"
+                onClick={() => setGuideOpen(true)}
+              >
+                {t.map.openGuide}
+              </button>
+            </div>
           </div>
         )}
 
@@ -229,6 +325,7 @@ export function MapView({
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
+          <MapController center={flyTo} zoom={flyZoom} />
           {pickMode && onPick ? <PickHandler onPick={onPick} /> : null}
           {cells.map((cell) => (
             <CircleMarker
@@ -266,11 +363,16 @@ export function MapView({
           <p className="map-tap-hint">{t.map.tapSpot}</p>
         )}
 
-        {selected && !pickMode ? (
+        {selected && !pickMode && !petitionOpen ? (
           <CellDetail
             reports={selected.reports}
-            petitionCount={petitionCount ?? 0}
-            onPetition={handlePetition}
+            petitionCount={cellPetitions.length}
+            onOpenPetitions={() => {
+              setFocusPetitionId(null)
+              setPetitionOpen(true)
+            }}
+            onShareSpot={onShareSpot}
+            onFlagReport={(id) => void onFlagReport(id)}
             onClose={() => setSelectedKey(null)}
           />
         ) : null}
@@ -296,6 +398,42 @@ export function MapView({
             people={missingPeople}
             onClose={() => setMissingOpen(false)}
             onChange={onMissingChange}
+          />
+        ) : null}
+
+        {petitionOpen && selected && !pickMode ? (
+          <PetitionSheet
+            cellLat={selected.lat}
+            cellLng={selected.lng}
+            cellKey={selected.key}
+            petitions={petitions}
+            focusId={focusPetitionId}
+            onChange={onPetitionsChange}
+            onClose={() => {
+              setPetitionOpen(false)
+              setFocusPetitionId(null)
+            }}
+          />
+        ) : null}
+
+        {petitionOpen && !selected && focusPetitionId && !pickMode ? (
+          <PetitionSheet
+            cellLat={
+              petitions.find((p) => p.id === focusPetitionId)?.grid_lat ?? -26.1
+            }
+            cellLng={
+              petitions.find((p) => p.id === focusPetitionId)?.grid_lng ?? 28.22
+            }
+            cellKey={
+              petitions.find((p) => p.id === focusPetitionId)?.grid_key ?? ''
+            }
+            petitions={petitions}
+            focusId={focusPetitionId}
+            onChange={onPetitionsChange}
+            onClose={() => {
+              setPetitionOpen(false)
+              setFocusPetitionId(null)
+            }}
           />
         ) : null}
       </div>

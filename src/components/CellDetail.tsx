@@ -1,12 +1,15 @@
 import { CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
+import { hasFlaggedReport } from '../lib/reports'
 import type { AffectedGender, Report } from '../types'
 
 type Props = {
   reports: Report[]
   petitionCount: number
-  onPetition: () => void
+  onOpenPetitions: () => void
+  onShareSpot: () => void
+  onFlagReport: (reportId: string) => void
   onClose: () => void
 }
 
@@ -21,7 +24,14 @@ function genderLabel(
   return t.report.genderUnknown
 }
 
-export function CellDetail({ reports, petitionCount, onPetition, onClose }: Props) {
+export function CellDetail({
+  reports,
+  petitionCount,
+  onOpenPetitions,
+  onShareSpot,
+  onFlagReport,
+  onClose,
+}: Props) {
   const { t } = useI18n()
   if (!reports.length) return null
 
@@ -104,6 +114,15 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
               {r.vehicle_type || r.vehicle_color
                 ? ` (${[r.vehicle_color, r.vehicle_type, r.vehicle_direction].filter(Boolean).join(' ')})`
                 : ''}
+              {!hasFlaggedReport(r.id) ? (
+                <button
+                  type="button"
+                  className="linkish flag-inline"
+                  onClick={() => onFlagReport(r.id)}
+                >
+                  {t.map.flagReport}
+                </button>
+              ) : null}
             </li>
           ))}
         </ul>
@@ -114,8 +133,11 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
       <p className="petition-line">
         {t.map.petitioned}: <strong>{petitionCount}</strong>
       </p>
-      <button type="button" className="primary" onClick={onPetition}>
+      <button type="button" className="primary" onClick={onOpenPetitions}>
         {t.map.petition}
+      </button>
+      <button type="button" className="secondary" onClick={onShareSpot}>
+        {t.map.shareSpot}
       </button>
     </div>
   )

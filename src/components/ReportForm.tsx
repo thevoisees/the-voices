@@ -1,8 +1,13 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { MapContainer, TileLayer, CircleMarker, useMapEvents } from 'react-leaflet'
 import { CATEGORIES } from '../data/categories'
 import { RED_FLAG_EXAMPLES } from '../data/redFlags'
 import { useI18n } from '../i18n'
+import {
+  clearReportDraft,
+  loadReportDraft,
+  saveReportDraft,
+} from '../lib/drafts'
 import { snapToGrid } from '../lib/grid'
 import { addNotebookEntry } from '../lib/notebook'
 import { submitReport } from '../lib/reports'
@@ -11,6 +16,24 @@ import 'leaflet/dist/leaflet.css'
 
 type Props = {
   onSubmitted: () => void
+}
+
+type ReportDraft = {
+  lat: number | null
+  lng: number | null
+  category: CategoryId | ''
+  role: ReporterRole
+  gender: AffectedGender | ''
+  timeBand: TimeBand | ''
+  incidentDate: string
+  what: string
+  redFlag: string
+  customFlag: string
+  vColor: string
+  vType: string
+  vDir: string
+  involvesMinor: boolean
+  saveNotebook: boolean
 }
 
 function LocationPicker({
@@ -48,6 +71,27 @@ export function ReportForm({ onSubmitted }: Props) {
   const [busy, setBusy] = useState(false)
   const [extraFlags, setExtraFlags] = useState<string[]>([])
 
+  useEffect(() => {
+    const draft = loadReportDraft<ReportDraft>()
+    if (!draft) return
+    setLat(draft.lat ?? null)
+    setLng(draft.lng ?? null)
+    setCategory(draft.category ?? '')
+    setRole(draft.role ?? 'self')
+    setGender(draft.gender ?? '')
+    setTimeBand(draft.timeBand ?? '')
+    setIncidentDate(draft.incidentDate ?? '')
+    setWhat(draft.what ?? '')
+    setRedFlag(draft.redFlag ?? '')
+    setCustomFlag(draft.customFlag ?? '')
+    setVColor(draft.vColor ?? '')
+    setVType(draft.vType ?? '')
+    setVDir(draft.vDir ?? '')
+    setInvolvesMinor(Boolean(draft.involvesMinor))
+    setSaveNotebook(Boolean(draft.saveNotebook))
+    setStatus(t.drafts.restore)
+  }, [t.drafts.restore])
+
   const flagOptions = useMemo(
     () => [...RED_FLAG_EXAMPLES, ...extraFlags],
     [extraFlags],
@@ -73,6 +117,27 @@ export function ReportForm({ onSubmitted }: Props) {
       () => setStatus('Could not read location'),
       { enableHighAccuracy: false, timeout: 10000 },
     )
+  }
+
+  function persistDraft() {
+    saveReportDraft({
+      lat,
+      lng,
+      category,
+      role,
+      gender,
+      timeBand,
+      incidentDate,
+      what,
+      redFlag,
+      customFlag,
+      vColor,
+      vType,
+      vDir,
+      involvesMinor,
+      saveNotebook,
+    } satisfies ReportDraft)
+    setStatus(t.drafts.saved)
   }
 
   async function onSubmit(e: FormEvent) {
@@ -123,6 +188,7 @@ export function ReportForm({ onSubmitted }: Props) {
       involves_minor: involvesMinor,
     })
     setBusy(false)
+    clearReportDraft()
     setStatus(res.error ? `${t.report.success} (${res.error})` : t.report.success)
     onSubmitted()
     setWhat('')
@@ -320,6 +386,22 @@ export function ReportForm({ onSubmitted }: Props) {
             {t.report.saveNotebook}
           </label>
         ) : null}
+
+        <div className="draft-actions">
+          <button type="button" className="secondary" onClick={persistDraft}>
+            {t.drafts.save}
+          </button>
+          <button
+            type="button"
+            className="linkish"
+            onClick={() => {
+              clearReportDraft()
+              setStatus(t.drafts.clear)
+            }}
+          >
+            {t.drafts.clear}
+          </button>
+        </div>
 
         <button type="submit" className="primary" disabled={busy}>
           {busy ? t.report.submitting : t.report.submit}

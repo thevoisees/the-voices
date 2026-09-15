@@ -33,14 +33,31 @@ export interface Report {
   vehicle_direction: string | null
   involves_minor: boolean
   hidden: boolean
+  flag_count?: number
   source?: 'seed' | 'live' | 'local'
 }
 
+/** @deprecated legacy cell counter — prefer AreaPetition */
 export interface Petition {
   grid_key: string
   count: number
   grid_lat: number
   grid_lng: number
+}
+
+export interface AreaPetition {
+  id: string
+  created_at: string
+  title: string
+  ask: string
+  grid_key: string
+  grid_lat: number
+  grid_lng: number
+  goal: number
+  count: number
+  flag_count: number
+  hidden: boolean
+  source?: 'live' | 'local'
 }
 
 export interface NotebookEntry {

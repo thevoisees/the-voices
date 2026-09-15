@@ -8,10 +8,11 @@ import { Notebook } from './components/Notebook'
 import { ReportForm } from './components/ReportForm'
 import { Statistics } from './components/Statistics'
 import { getDict, I18nContext } from './i18n'
+import { readDeepLink } from './lib/deeplink'
 import { fetchMissingPeople } from './lib/missing'
 import { fetchPetitions } from './lib/petitions'
 import { fetchReports } from './lib/reports'
-import type { Lang, Petition, Report, Screen } from './types'
+import type { AreaPetition, Lang, Report, Screen } from './types'
 import type { MissingPerson } from './types-missing'
 
 const LANG_KEY = 'thevoices_lang'
@@ -25,9 +26,10 @@ export default function App() {
   const [entered, setEntered] = useState(() => sessionStorage.getItem(ENTERED_KEY) === '1')
   const [screen, setScreen] = useState<Screen>('map')
   const [reports, setReports] = useState<Report[]>([])
-  const [petitions, setPetitions] = useState<Petition[]>([])
+  const [petitions, setPetitions] = useState<AreaPetition[]>([])
   const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([])
   const [loading, setLoading] = useState(true)
+  const [deepLink] = useState(() => readDeepLink())
 
   const t = useMemo(() => getDict(lang), [lang])
 
@@ -39,6 +41,11 @@ export default function App() {
   const refreshMissing = useCallback(async () => {
     const m = await fetchMissingPeople()
     setMissingPeople(m)
+  }, [])
+
+  const refreshPetitions = useCallback(async () => {
+    const p = await fetchPetitions()
+    setPetitions(p)
   }, [])
 
   const refresh = useCallback(async () => {
@@ -79,10 +86,15 @@ export default function App() {
                 <MapView
                   reports={reports}
                   petitions={petitions}
-                  onPetitionsChange={setPetitions}
+                  onPetitionsChange={() => {
+                    void refreshPetitions()
+                    void refresh()
+                  }}
                   missingPeople={missingPeople}
                   onMissingChange={() => void refreshMissing()}
                   onGoReport={() => setScreen('report')}
+                  initialSpotKey={deepLink.spotKey}
+                  initialPetitionId={deepLink.petitionId}
                 />
               ))}
             {screen === 'report' && (
