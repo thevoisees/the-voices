@@ -1,13 +1,24 @@
 import { CATEGORY_MAP } from '../data/categories'
 import { useI18n } from '../i18n'
 import { gridKey } from '../lib/grid'
-import type { Report } from '../types'
+import type { AffectedGender, Report } from '../types'
 
 type Props = {
   reports: Report[]
   petitionCount: number
   onPetition: () => void
   onClose: () => void
+}
+
+function genderLabel(
+  g: AffectedGender,
+  t: ReturnType<typeof useI18n>['t'],
+): string {
+  if (g === 'woman') return t.report.genderWoman
+  if (g === 'man') return t.report.genderMan
+  if (g === 'girl') return t.report.genderGirl
+  if (g === 'boy') return t.report.genderBoy
+  return t.report.genderUnknown
 }
 
 export function CellDetail({ reports, petitionCount, onPetition, onClose }: Props) {
@@ -18,6 +29,12 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
   const byCat = new Map<string, number>()
   for (const r of reports) {
     byCat.set(r.category, (byCat.get(r.category) ?? 0) + 1)
+  }
+
+  const byGender = new Map<AffectedGender, number>()
+  for (const r of reports) {
+    if (!r.affected_gender) continue
+    byGender.set(r.affected_gender, (byGender.get(r.affected_gender) ?? 0) + 1)
   }
 
   const publicOnes = reports.filter((r) => {
@@ -63,6 +80,20 @@ export function CellDetail({ reports, petitionCount, onPetition, onClose }: Prop
           </li>
         ))}
       </ul>
+
+      {byGender.size > 0 ? (
+        <>
+          <p className="cell-meta-label">{t.map.spotGender}</p>
+          <ul className="cat-counts">
+            {[...byGender.entries()].map(([g, n]) => (
+              <li key={g}>
+                {genderLabel(g, t)}
+                <span className="legend-count">{n}</span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
 
       {publicOnes.length > 0 ? (
         <ul className="snippets">

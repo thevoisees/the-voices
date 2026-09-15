@@ -6,6 +6,7 @@ import { MapView } from './components/MapView'
 import { BottomNav, TopBar } from './components/Nav'
 import { Notebook } from './components/Notebook'
 import { ReportForm } from './components/ReportForm'
+import { Statistics } from './components/Statistics'
 import { getDict, I18nContext } from './i18n'
 import { fetchPetitions } from './lib/petitions'
 import { fetchReports } from './lib/reports'
@@ -76,6 +77,7 @@ export default function App() {
                 }}
               />
             )}
+            {screen === 'stats' && <Statistics reports={reports} />}
             {screen === 'notebook' && <Notebook />}
             {screen === 'about' && <About />}
           </main>

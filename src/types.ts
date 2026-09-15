@@ -2,6 +2,9 @@ export type ReporterRole = 'self' | 'bystander' | 'other'
 
 export type TimeBand = 'morning' | 'afternoon' | 'evening' | 'night'
 
+/** Gender of the person affected — not a name, not the reporter’s ID */
+export type AffectedGender = 'woman' | 'man' | 'girl' | 'boy' | 'unknown'
+
 export type CategoryId =
   | 'followed'
   | 'grabbed'
@@ -20,6 +23,7 @@ export interface Report {
   grid_lng: number
   category: CategoryId
   reporter_role: ReporterRole
+  affected_gender: AffectedGender | null
   time_band: TimeBand | null
   incident_date: string | null
   what_happened: string | null
@@ -51,4 +55,4 @@ export interface NotebookEntry {
 
 export type Lang = 'en' | 'zu' | 'st'
 
-export type Screen = 'map' | 'report' | 'notebook' | 'about'
+export type Screen = 'map' | 'stats' | 'report' | 'notebook' | 'about'

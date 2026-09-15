@@ -6,7 +6,7 @@ import { useI18n } from '../i18n'
 import { snapToGrid } from '../lib/grid'
 import { addNotebookEntry } from '../lib/notebook'
 import { submitReport } from '../lib/reports'
-import type { CategoryId, ReporterRole, TimeBand } from '../types'
+import type { AffectedGender, CategoryId, ReporterRole, TimeBand } from '../types'
 import 'leaflet/dist/leaflet.css'
 
 type Props = {
@@ -33,6 +33,7 @@ export function ReportForm({ onSubmitted }: Props) {
   const [lng, setLng] = useState<number | null>(null)
   const [category, setCategory] = useState<CategoryId | ''>('')
   const [role, setRole] = useState<ReporterRole>('self')
+  const [gender, setGender] = useState<AffectedGender | ''>('')
   const [timeBand, setTimeBand] = useState<TimeBand | ''>('')
   const [incidentDate, setIncidentDate] = useState('')
   const [what, setWhat] = useState('')
@@ -111,6 +112,7 @@ export function ReportForm({ onSubmitted }: Props) {
       lng,
       category,
       reporter_role: role,
+      affected_gender: gender || null,
       time_band: timeBand || null,
       incident_date: incidentDate || null,
       what_happened: showStory ? what : null,
@@ -194,6 +196,22 @@ export function ReportForm({ onSubmitted }: Props) {
             <option value="other">{t.report.roleOther}</option>
           </select>
         </label>
+
+        <label>
+          {t.report.gender}
+          <select
+            value={gender}
+            onChange={(e) => setGender(e.target.value as AffectedGender | '')}
+          >
+            <option value="">{t.report.genderSkip}</option>
+            <option value="woman">{t.report.genderWoman}</option>
+            <option value="man">{t.report.genderMan}</option>
+            <option value="girl">{t.report.genderGirl}</option>
+            <option value="boy">{t.report.genderBoy}</option>
+            <option value="unknown">{t.report.genderUnknown}</option>
+          </select>
+        </label>
+        <p className="hint">{t.report.genderHint}</p>
 
         <label>
           {t.report.timeBand}

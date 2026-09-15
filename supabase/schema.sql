@@ -9,6 +9,7 @@ create table if not exists public.reports (
   grid_lng double precision not null,
   category text not null,
   reporter_role text not null check (reporter_role in ('self', 'bystander', 'other')),
+  affected_gender text null check (affected_gender is null or affected_gender in ('woman', 'man', 'girl', 'boy', 'unknown')),
   time_band text null,
   incident_date date null,
   what_happened text null,
@@ -23,6 +24,9 @@ create table if not exists public.reports (
 create index if not exists reports_grid_idx on public.reports (grid_lat, grid_lng);
 create index if not exists reports_created_idx on public.reports (created_at desc);
 create index if not exists reports_hidden_idx on public.reports (hidden);
+
+-- If the table already exists without gender:
+-- alter table public.reports add column if not exists affected_gender text null;
 
 create table if not exists public.petitions (
   grid_key text primary key,
@@ -64,12 +68,12 @@ create policy "Public update petitions"
   using (true)
   with check (true);
 
--- Optional: seed public-news dump-site cells (no victim names)
-insert into public.reports (grid_lat, grid_lng, category, reporter_role, time_band, incident_date, involves_minor, hidden)
+-- Optional: seed public-news dump-site cells (no victim names; gender from public reports)
+insert into public.reports (grid_lat, grid_lng, category, reporter_role, affected_gender, time_band, incident_date, involves_minor, hidden)
 values
-  (-26.1008, 28.2304, 'body_dump', 'other', 'morning', '2026-07-15', false, false),
-  (-26.0944, 28.2208, 'body_dump', 'other', 'afternoon', '2026-08-24', false, false),
-  (-26.1232, 28.2240, 'body_dump', 'other', 'night', '2026-09-10', false, false),
-  (-26.1216, 28.2256, 'body_dump', 'other', 'evening', '2026-09-12', false, false),
-  (-25.9584, 28.2176, 'body_dump', 'other', 'morning', '2026-09-14', false, false)
+  (-26.1008, 28.2304, 'body_dump', 'other', 'woman', 'morning', '2026-07-15', false, false),
+  (-26.0944, 28.2208, 'body_dump', 'other', 'woman', 'afternoon', '2026-08-24', false, false),
+  (-26.1232, 28.2240, 'body_dump', 'other', 'woman', 'night', '2026-09-10', false, false),
+  (-26.1216, 28.2256, 'body_dump', 'other', 'woman', 'evening', '2026-09-12', false, false),
+  (-25.9584, 28.2176, 'body_dump', 'other', 'woman', 'morning', '2026-09-14', false, false)
 on conflict do nothing;

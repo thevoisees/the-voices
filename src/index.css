@@ -974,7 +974,7 @@ a {
 
   .nav-bottom {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(5, 1fr);
     position: sticky;
     bottom: 0;
     z-index: 800;
@@ -999,7 +999,7 @@ a {
     cursor: pointer;
     color: var(--muted);
     font-weight: 600;
-    font-size: 0.68rem;
+    font-size: 0.62rem;
     transition: background 0.15s ease, color 0.15s ease;
   }
 
@@ -1193,5 +1193,101 @@ a {
 
   .intro-slide.active {
     transform: scale(1.04);
+  }
+}
+
+/* ——— Statistics ——— */
+.stats-page {
+  max-width: 40rem;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-bottom: 1.5rem;
+}
+
+.stats-head h1 {
+  margin: 0 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 1.65rem;
+  color: var(--purple-deep);
+  line-height: 1.2;
+}
+
+.stats-kpis {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.65rem;
+}
+
+.stats-kpi {
+  padding: 0.9rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.stats-kpi-n {
+  font-family: var(--font-display);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--purple-deep);
+  line-height: 1.1;
+}
+
+.stats-kpi-l {
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.stats-section h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  color: var(--purple-deep);
+}
+
+.stats-bars {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.stats-bar-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+  font-size: 0.88rem;
+}
+
+.stats-bar-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.stats-bar-track {
+  height: 0.45rem;
+  background: var(--purple-soft);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stats-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  min-width: 0;
+  transition: width 0.35s ease;
+}
+
+@media (min-width: 640px) {
+  .stats-kpis {
+    grid-template-columns: repeat(4, 1fr);
   }
 }

@@ -1,5 +1,5 @@
 import { SEED_REPORTS } from '../data/seed'
-import type { CategoryId, Report, ReporterRole, TimeBand } from '../types'
+import type { AffectedGender, CategoryId, Report, ReporterRole, TimeBand } from '../types'
 import { snapToGrid } from './grid'
 import { stripIdentity } from './strip'
 import { supabase, supabaseConfigured } from './supabase'
@@ -10,7 +10,11 @@ function loadLocal(): Report[] {
   try {
     const raw = localStorage.getItem(LOCAL_KEY)
     if (!raw) return []
-    return JSON.parse(raw) as Report[]
+    const parsed = JSON.parse(raw) as Report[]
+    return parsed.map((r) => ({
+      ...r,
+      affected_gender: r.affected_gender ?? null,
+    }))
   } catch {
     return []
   }
@@ -25,6 +29,7 @@ export type NewReportInput = {
   lng: number
   category: CategoryId
   reporter_role: ReporterRole
+  affected_gender: AffectedGender | null
   time_band: TimeBand | null
   incident_date: string | null
   what_happened: string | null
@@ -59,6 +64,7 @@ function sanitizeForPublic(input: NewReportInput): Omit<Report, 'id' | 'created_
     grid_lng: Number(g.lng.toFixed(4)),
     category: input.category,
     reporter_role: input.reporter_role,
+    affected_gender: input.affected_gender,
     time_band: input.time_band,
     incident_date: input.incident_date,
     what_happened: what,
@@ -88,7 +94,11 @@ export async function fetchReports(): Promise<Report[]> {
     return [...SEED_REPORTS, ...local]
   }
 
-  const live = (data as Report[]).map((r) => ({ ...r, source: 'live' as const }))
+  const live = (data as Report[]).map((r) => ({
+    ...r,
+    affected_gender: r.affected_gender ?? null,
+    source: 'live' as const,
+  }))
   // Keep seed visible even when live DB is empty
   const seedIds = new Set(SEED_REPORTS.map((s) => s.id))
   const withoutDupSeed = live.filter((r) => !seedIds.has(r.id))
