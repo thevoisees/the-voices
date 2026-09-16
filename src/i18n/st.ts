@@ -368,6 +368,11 @@ export const st: Dict = {
     lastSeenDateHint: 'Letsatsi le nepahetseng haeba u le tseba — kapa ngola “hoo e ka bang March”, “bekeng e fetileng”, “ha ke na bonnete”.',
     datePlaceholder: 'mohl. 2024-03-12, hoo e ka bang March, ha ke na bonnete',
     photoReplace: 'Fetola foto (boikhethelo)',
+    shotHint: 'Kuta foreimi — e hlakile bakeng sa Instagram, WhatsApp le X.',
+    shareBrand: 'The Voices',
+    shareMissing: 'O lahlehile',
+    shareHelp: 'Thusang ho ba fumana.',
+    shareTag: '#TheVoicesMissing',
   },
   report: {
     title: 'Tlaleho e sa tsejoeng',

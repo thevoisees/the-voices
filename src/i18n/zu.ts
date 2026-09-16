@@ -368,6 +368,11 @@ export const zu: Dict = {
     lastSeenDateHint: 'Usuku oluqondile uma ulwazi — noma bhala “cishe ngo-March”, “iviki eledlule”, “angiqiniseki”.',
     datePlaceholder: 'isib. 2024-03-12, cishe ngo-March, angiqiniseki',
     photoReplace: 'Shintsha isithombe (okukhethekile)',
+    shotHint: 'Sika ufame — uhlanzekile ku-Instagram, WhatsApp, ne-X.',
+    shareBrand: 'The Voices',
+    shareMissing: 'Ulahlekile',
+    shareHelp: 'Siza ukumbona.',
+    shareTag: '#TheVoicesMissing',
   },
   report: {
     title: 'Umbiko ongaziwa',

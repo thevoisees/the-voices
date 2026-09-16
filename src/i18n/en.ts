@@ -366,6 +366,11 @@ export const en = {
     lastSeenDateHint: 'Exact date if you know it — or write “around March”, “last week”, “not sure”.',
     datePlaceholder: 'e.g. 2024-03-12, around March, not sure',
     photoReplace: 'Replace photo (optional)',
+    shotHint: 'Crop to the frame — clean for Instagram, WhatsApp, and X.',
+    shareBrand: 'The Voices',
+    shareMissing: 'Missing',
+    shareHelp: 'Help find them.',
+    shareTag: '#TheVoicesMissing',
   },
   report: {
     title: 'Anonymous report',

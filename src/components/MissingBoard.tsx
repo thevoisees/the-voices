@@ -60,6 +60,33 @@ function statusLabel(p: MissingPerson, t: ReturnType<typeof useI18n>['t']) {
   return t.missing.stillMissing
 }
 
+function statusTone(p: MissingPerson) {
+  if (p.status === 'found_alive') return 'alive'
+  if (p.status === 'found_dead') return 'dead'
+  return 'missing'
+}
+
+function genderLabel(
+  gender: AffectedGender | null | undefined,
+  t: ReturnType<typeof useI18n>['t'],
+) {
+  if (!gender) return null
+  if (gender === 'woman') return t.report.genderWoman
+  if (gender === 'man') return t.report.genderMan
+  if (gender === 'girl') return t.report.genderGirl
+  if (gender === 'boy') return t.report.genderBoy
+  return t.report.genderUnknown
+}
+
+const FRAME_DESC_CHARS = 110
+
+function frameDescription(text: string | null | undefined) {
+  const body = (text ?? '').trim()
+  if (!body) return null
+  if (body.length <= FRAME_DESC_CHARS) return body
+  return `${body.slice(0, FRAME_DESC_CHARS).replace(/\s+\S*$/, '').trim()}…`
+}
+
 export function MissingBoard({ people, onClose, onChange }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('list')
@@ -307,6 +334,14 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
     onChange()
   }
 
+  const shareTone = selected ? statusTone(selected) : 'missing'
+  const shareDesc = selected ? frameDescription(selected.description) : null
+  const shareMeta = selected
+    ? [selected.age_note, genderLabel(selected.gender, t)].filter(Boolean).join(' · ')
+    : ''
+  const shareFullDesc = (selected?.description ?? '').trim()
+  const shareShowExtra = shareFullDesc.length > FRAME_DESC_CHARS
+
   return (
     <div className="missing-board" role="dialog" aria-label={t.missing.title}>
       <div className="missing-board-scrim" onClick={onClose} />
@@ -369,18 +404,38 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
               <p className="hint">{t.missing.empty}</p>
             ) : (
               <ul className="missing-list">
-                {filtered.map((p) => (
-                  <li key={p.id}>
-                    <button type="button" className="missing-row" onClick={() => setSelected(p)}>
-                      <img src={resolvePhotoUrl(p.photo)} alt="" />
-                      <span>
-                        <strong>{p.name}</strong>
-                        <em>{p.last_seen_place}</em>
-                        <small>{statusLabel(p, t)}</small>
-                      </span>
-                    </button>
-                  </li>
-                ))}
+                {filtered.map((p) => {
+                  const tone = statusTone(p)
+                  const meta = [p.age_note, genderLabel(p.gender, t)]
+                    .filter(Boolean)
+                    .join(' · ')
+                  return (
+                    <li key={p.id}>
+                      <button
+                        type="button"
+                        className={`missing-card tone-${tone}`}
+                        onClick={() => setSelected(p)}
+                      >
+                        <div className="missing-card-photo">
+                          <img src={resolvePhotoUrl(p.photo)} alt="" />
+                          <span className={`missing-card-badge tone-${tone}`}>
+                            {tone === 'missing'
+                              ? t.missing.shareMissing
+                              : statusLabel(p, t)}
+                          </span>
+                        </div>
+                        <span className="missing-card-body">
+                          <strong>{p.name}</strong>
+                          {meta ? <em>{meta}</em> : null}
+                          <small>
+                            {p.last_seen_place}
+                            {p.last_seen_date ? ` · ${p.last_seen_date}` : ''}
+                          </small>
+                        </span>
+                      </button>
+                    </li>
+                  )
+                })}
               </ul>
             )}
           </div>
@@ -544,114 +599,143 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
               </form>
             ) : (
               <>
-                <div className="missing-detail-hero">
-                  <img src={resolvePhotoUrl(selected.photo)} alt={selected.name} />
-                  <div>
-                    <h2>{selected.name}</h2>
-                    <p className="missing-badge">{statusLabel(selected, t)}</p>
-                    {selected.age_note ? <p>{selected.age_note}</p> : null}
-                    {selected.gender ? (
-                      <p>
-                        {selected.gender === 'woman'
-                          ? t.report.genderWoman
-                          : selected.gender === 'man'
-                            ? t.report.genderMan
-                            : selected.gender === 'girl'
-                              ? t.report.genderGirl
-                              : selected.gender === 'boy'
-                                ? t.report.genderBoy
-                                : t.report.genderUnknown}
+                <p className="shot-hint missing-shot-hint">{t.missing.shotHint}</p>
+
+                <article
+                  className={`missing-share tone-${shareTone}`}
+                  aria-label={`${t.missing.shareMissing}: ${selected.name}`}
+                >
+                  <div className="missing-share-inner">
+                    <header className="missing-share-top">
+                      <div className="missing-share-brand">{t.missing.shareBrand}</div>
+                      <span className={`missing-share-status tone-${shareTone}`}>
+                        {shareTone === 'missing'
+                          ? t.missing.shareMissing
+                          : statusLabel(selected, t)}
+                      </span>
+                    </header>
+
+                    <div className="missing-share-photo">
+                      <img
+                        src={resolvePhotoUrl(selected.photo)}
+                        alt={selected.name}
+                      />
+                    </div>
+
+                    <div className="missing-share-copy">
+                      <h2>{selected.name}</h2>
+                      {shareMeta ? (
+                        <p className="missing-share-meta">{shareMeta}</p>
+                      ) : null}
+                      <p className="missing-share-seen">
+                        <span>{t.missing.lastSeen}</span>
+                        {selected.last_seen_place}
+                        {selected.last_seen_date
+                          ? ` · ${selected.last_seen_date}`
+                          : ''}
                       </p>
+                      {shareDesc ? (
+                        <p className="missing-share-desc">{shareDesc}</p>
+                      ) : null}
+                    </div>
+
+                    <footer className="missing-share-foot">
+                      <span>{t.missing.shareHelp}</span>
+                      <span className="missing-share-tag">{t.missing.shareTag}</span>
+                    </footer>
+                  </div>
+                </article>
+
+                {shareShowExtra || selected.contact_note ? (
+                  <dl className="missing-dl missing-dl-extra">
+                    {shareShowExtra ? (
+                      <div>
+                        <dt>{t.missing.description}</dt>
+                        <dd>{shareFullDesc}</dd>
+                      </div>
                     ) : null}
-                  </div>
-                </div>
-                <dl className="missing-dl">
-                  <div>
-                    <dt>{t.missing.lastSeen}</dt>
-                    <dd>
-                      {selected.last_seen_place}
-                      {selected.last_seen_date ? ` · ${selected.last_seen_date}` : ''}
-                    </dd>
-                  </div>
-                  {selected.description ? (
-                    <div>
-                      <dt>{t.missing.description}</dt>
-                      <dd>{selected.description}</dd>
-                    </div>
-                  ) : null}
-                  {selected.contact_note ? (
-                    <div>
-                      <dt>{t.missing.contact}</dt>
-                      <dd>{selected.contact_note}</dd>
-                    </div>
-                  ) : null}
-                </dl>
+                    {selected.contact_note ? (
+                      <div>
+                        <dt>{t.missing.contact}</dt>
+                        <dd>{selected.contact_note}</dd>
+                      </div>
+                    ) : null}
+                  </dl>
+                ) : null}
 
-                <button type="button" className="secondary" onClick={startEdit}>
-                  {t.missing.edit}
-                </button>
+                <div className="missing-detail-actions">
+                  <button type="button" className="secondary" onClick={startEdit}>
+                    {t.missing.edit}
+                  </button>
 
-                {selected.status === 'missing' ? (
-                  <div className="missing-verify panel">
-                    <h3>{t.missing.verifyTitle}</h3>
-                    <p className="hint">
-                      {t.missing.verifyLead.replace(
-                        '{n}',
-                        String(MISSING_VERIFY_THRESHOLD),
+                  {selected.status === 'missing' ? (
+                    <div className="missing-verify panel">
+                      <h3>{t.missing.verifyTitle}</h3>
+                      <p className="hint">
+                        {t.missing.verifyLead.replace(
+                          '{n}',
+                          String(MISSING_VERIFY_THRESHOLD),
+                        )}
+                      </p>
+                      <p className="missing-verify-counts">
+                        {t.missing.votesAlive}:{' '}
+                        <strong>{selected.verify_alive}</strong>
+                        {' · '}
+                        {t.missing.votesDead}:{' '}
+                        <strong>{selected.verify_dead}</strong>
+                        {' / '}
+                        {MISSING_VERIFY_THRESHOLD}
+                      </p>
+                      {hasVoted(selected.id) ? (
+                        <p className="banner success">{t.missing.alreadyVoted}</p>
+                      ) : (
+                        <div className="missing-verify-actions">
+                          <button
+                            type="button"
+                            className="primary"
+                            disabled={busy}
+                            onClick={() => void onVerify('alive')}
+                          >
+                            {t.missing.voteAlive}
+                          </button>
+                          <button
+                            type="button"
+                            className="secondary"
+                            disabled={busy}
+                            onClick={() => void onVerify('dead')}
+                          >
+                            {t.missing.voteDead}
+                          </button>
+                        </div>
                       )}
-                    </p>
-                    <p className="missing-verify-counts">
-                      {t.missing.votesAlive}: <strong>{selected.verify_alive}</strong>
-                      {' · '}
-                      {t.missing.votesDead}: <strong>{selected.verify_dead}</strong>
-                      {' / '}
-                      {MISSING_VERIFY_THRESHOLD}
-                    </p>
-                    {hasVoted(selected.id) ? (
-                      <p className="banner success">{t.missing.alreadyVoted}</p>
-                    ) : (
-                      <div className="missing-verify-actions">
-                        <button
-                          type="button"
-                          className="primary"
-                          disabled={busy}
-                          onClick={() => void onVerify('alive')}
-                        >
-                          {t.missing.voteAlive}
-                        </button>
+                    </div>
+                  ) : (
+                    <div className="missing-verify panel">
+                      {!hasDisputed(selected.id) ? (
                         <button
                           type="button"
                           className="secondary"
                           disabled={busy}
-                          onClick={() => void onVerify('dead')}
+                          onClick={() => void onDispute()}
                         >
-                          {t.missing.voteDead}
+                          {t.missing.dispute}
                         </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="missing-verify panel">
-                    {!hasDisputed(selected.id) ? (
-                      <button
-                        type="button"
-                        className="secondary"
-                        disabled={busy}
-                        onClick={() => void onDispute()}
-                      >
-                        {t.missing.dispute}
-                      </button>
-                    ) : (
-                      <p className="banner info">{t.missing.disputeAlready}</p>
-                    )}
-                  </div>
-                )}
+                      ) : (
+                        <p className="banner info">{t.missing.disputeAlready}</p>
+                      )}
+                    </div>
+                  )}
 
-                {!hasFlaggedMissing(selected.id) ? (
-                  <button type="button" className="linkish" onClick={() => void onFlag()}>
-                    {t.missing.flag}
-                  </button>
-                ) : null}
+                  {!hasFlaggedMissing(selected.id) ? (
+                    <button
+                      type="button"
+                      className="linkish"
+                      onClick={() => void onFlag()}
+                    >
+                      {t.missing.flag}
+                    </button>
+                  ) : null}
+                </div>
               </>
             )}
           </div>
