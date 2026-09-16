@@ -425,8 +425,7 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
               {t.missing.photo}
               <input
                 type="file"
-                accept="image/*"
-                capture="environment"
+                accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
                 onChange={(e) => void onPhoto(e.target.files?.[0])}
               />
             </label>
