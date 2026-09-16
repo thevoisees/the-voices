@@ -356,6 +356,18 @@ export const st: Dict = {
     disputeThanks: 'Khang e ngotsoe.',
     disputeAlready: 'U se u hanyelitse sesebelisoa sena.',
     disputeReverted: 'Likhang li lekane — boemo bo khutletse ho ntse a lahlehile.',
+    edit: 'Fetola lintlha',
+    editCancel: 'Hlakola ho fetola',
+    editSave: 'Boloka liphetoho',
+    editSaving: 'E boloka liphetoho…',
+    editSuccess: 'Lintlha li ntlafalitsoe. Kea leboha.',
+    editFail: 'Liphetoho ha lia bolokoa.',
+    editNeedFields: 'Lebitso le sebaka lia hlokahala.',
+    editWarn:
+      'Mang kapa mang a ka ntlafatsa lethathamo lena — lokisa sebaka, letsatsi, tlhaloso kapa foto. Eba hlokolosi \'me u be le nnete.',
+    lastSeenDateHint: 'Letsatsi le nepahetseng haeba u le tseba — kapa ngola “hoo e ka bang March”, “bekeng e fetileng”, “ha ke na bonnete”.',
+    datePlaceholder: 'mohl. 2024-03-12, hoo e ka bang March, ha ke na bonnete',
+    photoReplace: 'Fetola foto (boikhethelo)',
   },
   report: {
     title: 'Tlaleho e sa tsejoeng',

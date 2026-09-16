@@ -16,6 +16,7 @@ import {
   prepareMissingPhoto,
   resolvePhotoUrl,
   submitMissingPerson,
+  updateMissingPerson,
   verifyFound,
 } from '../lib/missing'
 import type { AffectedGender } from '../types'
@@ -77,6 +78,8 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
   const [contact, setContact] = useState('')
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
+  const [editing, setEditing] = useState(false)
+  const [editPhoto, setEditPhoto] = useState<string | null>(null)
 
   useEffect(() => {
     const draft = loadMissingDraft<MissingDraft>()
@@ -92,6 +95,40 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
     setLng(draft.lng ?? null)
     setStatus(t.drafts.restore)
   }, [t.drafts.restore])
+
+  useEffect(() => {
+    if (!selected) {
+      setEditing(false)
+      setEditPhoto(null)
+      return
+    }
+    if (editing) return
+    const fresh = people.find((p) => p.id === selected.id)
+    if (fresh) setSelected(fresh)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only refresh detail when list data changes
+  }, [people, selected?.id, editing])
+
+  function startEdit() {
+    if (!selected) return
+    setName(selected.name)
+    setGender(selected.gender ?? '')
+    setAgeNote(selected.age_note ?? '')
+    setPlace(selected.last_seen_place)
+    setDate(selected.last_seen_date ?? '')
+    setDesc(selected.description ?? '')
+    setContact(selected.contact_note ?? '')
+    setLat(selected.grid_lat)
+    setLng(selected.grid_lng)
+    setEditPhoto(null)
+    setEditing(true)
+    setStatus(null)
+  }
+
+  function cancelEdit() {
+    setEditing(false)
+    setEditPhoto(null)
+    setStatus(null)
+  }
 
   const filtered = useMemo(() => {
     return people.filter((p) => {
@@ -127,6 +164,47 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
       setStatus(t.missing.photoFail)
     }
     setBusy(false)
+  }
+
+  async function onEditPhoto(file: File | undefined) {
+    if (!file) return
+    setBusy(true)
+    try {
+      const url = await prepareMissingPhoto(file)
+      setEditPhoto(url)
+    } catch {
+      setStatus(t.missing.photoFail)
+    }
+    setBusy(false)
+  }
+
+  async function onSaveEdit(e: FormEvent) {
+    e.preventDefault()
+    if (!selected) return
+    setStatus(null)
+    setBusy(true)
+    const res = await updateMissingPerson(selected.id, {
+      name,
+      photoDataUrl: editPhoto,
+      gender: gender || null,
+      age_note: ageNote || null,
+      last_seen_place: place,
+      last_seen_date: date || null,
+      grid_lat: lat,
+      grid_lng: lng,
+      description: desc || null,
+      contact_note: contact || null,
+    })
+    setBusy(false)
+    if (!res.ok || !res.person) {
+      setStatus(res.error === 'need_fields' ? t.missing.editNeedFields : t.missing.editFail)
+      return
+    }
+    setSelected(res.person)
+    setEditing(false)
+    setEditPhoto(null)
+    setStatus(t.missing.editSuccess)
+    onChange()
   }
 
   async function onSubmit(e: FormEvent) {
@@ -310,110 +388,272 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
 
         {tab === 'list' && selected ? (
           <div className="missing-detail">
-            <button type="button" className="linkish" onClick={() => setSelected(null)}>
+            <button
+              type="button"
+              className="linkish"
+              onClick={() => {
+                cancelEdit()
+                setSelected(null)
+              }}
+            >
               ← {t.missing.back}
             </button>
-            <div className="missing-detail-hero">
-              <img src={resolvePhotoUrl(selected.photo)} alt={selected.name} />
-              <div>
-                <h2>{selected.name}</h2>
-                <p className="missing-badge">{statusLabel(selected, t)}</p>
-                {selected.age_note ? <p>{selected.age_note}</p> : null}
-                {selected.gender ? (
-                  <p>
-                    {selected.gender === 'woman'
-                      ? t.report.genderWoman
-                      : selected.gender === 'man'
-                        ? t.report.genderMan
-                        : selected.gender === 'girl'
-                          ? t.report.genderGirl
-                          : selected.gender === 'boy'
-                            ? t.report.genderBoy
-                            : t.report.genderUnknown}
-                  </p>
-                ) : null}
-              </div>
-            </div>
-            <dl className="missing-dl">
-              <div>
-                <dt>{t.missing.lastSeen}</dt>
-                <dd>
-                  {selected.last_seen_place}
-                  {selected.last_seen_date ? ` · ${selected.last_seen_date}` : ''}
-                </dd>
-              </div>
-              {selected.description ? (
-                <div>
-                  <dt>{t.missing.description}</dt>
-                  <dd>{selected.description}</dd>
-                </div>
-              ) : null}
-              {selected.contact_note ? (
-                <div>
-                  <dt>{t.missing.contact}</dt>
-                  <dd>{selected.contact_note}</dd>
-                </div>
-              ) : null}
-            </dl>
 
-            {selected.status === 'missing' ? (
-              <div className="missing-verify panel">
-                <h3>{t.missing.verifyTitle}</h3>
-                <p className="hint">
-                  {t.missing.verifyLead.replace('{n}', String(MISSING_VERIFY_THRESHOLD))}
-                </p>
-                <p className="missing-verify-counts">
-                  {t.missing.votesAlive}: <strong>{selected.verify_alive}</strong>
-                  {' · '}
-                  {t.missing.votesDead}: <strong>{selected.verify_dead}</strong>
-                  {' / '}
-                  {MISSING_VERIFY_THRESHOLD}
-                </p>
-                {hasVoted(selected.id) ? (
-                  <p className="banner success">{t.missing.alreadyVoted}</p>
+            {editing ? (
+              <form className="form missing-form" onSubmit={(e) => void onSaveEdit(e)}>
+                <p className="banner warn">{t.missing.editWarn}</p>
+
+                <div className="missing-detail-hero">
+                  <img
+                    src={editPhoto || resolvePhotoUrl(selected.photo)}
+                    alt={selected.name}
+                  />
+                </div>
+
+                <label>
+                  {t.missing.photoReplace}
+                  <input
+                    type="file"
+                    accept="image/*,.jpg,.jpeg,.png,.webp,.heic,.heif"
+                    onChange={(e) => void onEditPhoto(e.target.files?.[0])}
+                  />
+                </label>
+
+                <label>
+                  {t.missing.name}
+                  <input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    maxLength={80}
+                  />
+                </label>
+
+                <label>
+                  {t.report.gender}
+                  <select
+                    value={gender}
+                    onChange={(e) => setGender(e.target.value as AffectedGender | '')}
+                  >
+                    <option value="">{t.report.genderSkip}</option>
+                    <option value="woman">{t.report.genderWoman}</option>
+                    <option value="man">{t.report.genderMan}</option>
+                    <option value="girl">{t.report.genderGirl}</option>
+                    <option value="boy">{t.report.genderBoy}</option>
+                    <option value="unknown">{t.report.genderUnknown}</option>
+                  </select>
+                </label>
+
+                <label>
+                  {t.missing.ageNote}
+                  <input
+                    value={ageNote}
+                    onChange={(e) => setAgeNote(e.target.value)}
+                    maxLength={40}
+                    placeholder={t.missing.agePlaceholder}
+                  />
+                </label>
+
+                <label>
+                  {t.missing.lastSeen}
+                  <input
+                    value={place}
+                    onChange={(e) => setPlace(e.target.value)}
+                    required
+                    maxLength={120}
+                    placeholder={t.missing.placePlaceholder}
+                  />
+                </label>
+
+                <label>
+                  {t.missing.lastSeenDate}
+                  <input
+                    type="text"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    maxLength={80}
+                    placeholder={t.missing.datePlaceholder}
+                  />
+                  <span className="hint">{t.missing.lastSeenDateHint}</span>
+                </label>
+
+                <fieldset>
+                  <legend>{t.missing.markMap}</legend>
+                  <div className="mini-map">
+                    <MapContainer
+                      center={
+                        lat != null && lng != null ? [lat, lng] : [-26.1, 28.22]
+                      }
+                      zoom={11}
+                      className="leaflet-mini"
+                    >
+                      <TileLayer
+                        attribution="&copy; OpenStreetMap"
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <PlacePicker
+                        onPick={(a, b) => {
+                          setLat(a)
+                          setLng(b)
+                        }}
+                      />
+                      {lat != null && lng != null ? (
+                        <CircleMarker
+                          center={[lat, lng]}
+                          radius={10}
+                          pathOptions={{
+                            color: '#0f766e',
+                            fillColor: '#14b8a6',
+                            fillOpacity: 0.9,
+                          }}
+                        />
+                      ) : null}
+                    </MapContainer>
+                  </div>
+                </fieldset>
+
+                <label>
+                  {t.missing.description}
+                  <textarea
+                    rows={3}
+                    maxLength={400}
+                    value={desc}
+                    onChange={(e) => setDesc(e.target.value)}
+                    placeholder={t.missing.descPlaceholder}
+                  />
+                </label>
+
+                <label>
+                  {t.missing.contact}
+                  <input
+                    value={contact}
+                    onChange={(e) => setContact(e.target.value)}
+                    maxLength={120}
+                    placeholder={t.missing.contactPlaceholder}
+                  />
+                </label>
+
+                <div className="draft-actions">
+                  <button type="button" className="secondary" onClick={cancelEdit}>
+                    {t.missing.editCancel}
+                  </button>
+                  <button type="submit" className="primary" disabled={busy}>
+                    {busy ? t.missing.editSaving : t.missing.editSave}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div className="missing-detail-hero">
+                  <img src={resolvePhotoUrl(selected.photo)} alt={selected.name} />
+                  <div>
+                    <h2>{selected.name}</h2>
+                    <p className="missing-badge">{statusLabel(selected, t)}</p>
+                    {selected.age_note ? <p>{selected.age_note}</p> : null}
+                    {selected.gender ? (
+                      <p>
+                        {selected.gender === 'woman'
+                          ? t.report.genderWoman
+                          : selected.gender === 'man'
+                            ? t.report.genderMan
+                            : selected.gender === 'girl'
+                              ? t.report.genderGirl
+                              : selected.gender === 'boy'
+                                ? t.report.genderBoy
+                                : t.report.genderUnknown}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+                <dl className="missing-dl">
+                  <div>
+                    <dt>{t.missing.lastSeen}</dt>
+                    <dd>
+                      {selected.last_seen_place}
+                      {selected.last_seen_date ? ` · ${selected.last_seen_date}` : ''}
+                    </dd>
+                  </div>
+                  {selected.description ? (
+                    <div>
+                      <dt>{t.missing.description}</dt>
+                      <dd>{selected.description}</dd>
+                    </div>
+                  ) : null}
+                  {selected.contact_note ? (
+                    <div>
+                      <dt>{t.missing.contact}</dt>
+                      <dd>{selected.contact_note}</dd>
+                    </div>
+                  ) : null}
+                </dl>
+
+                <button type="button" className="secondary" onClick={startEdit}>
+                  {t.missing.edit}
+                </button>
+
+                {selected.status === 'missing' ? (
+                  <div className="missing-verify panel">
+                    <h3>{t.missing.verifyTitle}</h3>
+                    <p className="hint">
+                      {t.missing.verifyLead.replace(
+                        '{n}',
+                        String(MISSING_VERIFY_THRESHOLD),
+                      )}
+                    </p>
+                    <p className="missing-verify-counts">
+                      {t.missing.votesAlive}: <strong>{selected.verify_alive}</strong>
+                      {' · '}
+                      {t.missing.votesDead}: <strong>{selected.verify_dead}</strong>
+                      {' / '}
+                      {MISSING_VERIFY_THRESHOLD}
+                    </p>
+                    {hasVoted(selected.id) ? (
+                      <p className="banner success">{t.missing.alreadyVoted}</p>
+                    ) : (
+                      <div className="missing-verify-actions">
+                        <button
+                          type="button"
+                          className="primary"
+                          disabled={busy}
+                          onClick={() => void onVerify('alive')}
+                        >
+                          {t.missing.voteAlive}
+                        </button>
+                        <button
+                          type="button"
+                          className="secondary"
+                          disabled={busy}
+                          onClick={() => void onVerify('dead')}
+                        >
+                          {t.missing.voteDead}
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 ) : (
-                  <div className="missing-verify-actions">
-                    <button
-                      type="button"
-                      className="primary"
-                      disabled={busy}
-                      onClick={() => void onVerify('alive')}
-                    >
-                      {t.missing.voteAlive}
-                    </button>
-                    <button
-                      type="button"
-                      className="secondary"
-                      disabled={busy}
-                      onClick={() => void onVerify('dead')}
-                    >
-                      {t.missing.voteDead}
-                    </button>
+                  <div className="missing-verify panel">
+                    {!hasDisputed(selected.id) ? (
+                      <button
+                        type="button"
+                        className="secondary"
+                        disabled={busy}
+                        onClick={() => void onDispute()}
+                      >
+                        {t.missing.dispute}
+                      </button>
+                    ) : (
+                      <p className="banner info">{t.missing.disputeAlready}</p>
+                    )}
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="missing-verify panel">
-                {!hasDisputed(selected.id) ? (
-                  <button
-                    type="button"
-                    className="secondary"
-                    disabled={busy}
-                    onClick={() => void onDispute()}
-                  >
-                    {t.missing.dispute}
-                  </button>
-                ) : (
-                  <p className="banner info">{t.missing.disputeAlready}</p>
-                )}
-              </div>
-            )}
 
-            {!hasFlaggedMissing(selected.id) ? (
-              <button type="button" className="linkish" onClick={() => void onFlag()}>
-                {t.missing.flag}
-              </button>
-            ) : null}
+                {!hasFlaggedMissing(selected.id) ? (
+                  <button type="button" className="linkish" onClick={() => void onFlag()}>
+                    {t.missing.flag}
+                  </button>
+                ) : null}
+              </>
+            )}
           </div>
         ) : null}
 
@@ -476,7 +716,14 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
 
             <label>
               {t.missing.lastSeenDate}
-              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+              <input
+                type="text"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                maxLength={80}
+                placeholder={t.missing.datePlaceholder}
+              />
+              <span className="hint">{t.missing.lastSeenDateHint}</span>
             </label>
 
             <fieldset>

@@ -78,7 +78,7 @@ create table if not exists public.missing_people (
   gender text null,
   age_note text null,
   last_seen_place text not null,
-  last_seen_date date null,
+  last_seen_date text null,
   grid_lat double precision null,
   grid_lng double precision null,
   description text null,

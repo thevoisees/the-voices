@@ -356,6 +356,18 @@ export const zu: Dict = {
     disputeThanks: 'Ukuphikisa kubhaliwe.',
     disputeAlready: 'Usuvele waphikisa kule divayisi.',
     disputeReverted: 'Ukuphikisa kwanele — isimo sibuyele ekutheni usalahlekile.',
+    edit: 'Hlela imininingwane',
+    editCancel: 'Khansela ukuhlela',
+    editSave: 'Londoloza izinguquko',
+    editSaving: 'Iyalondoloza izinguquko…',
+    editSuccess: 'Imininingwane ibuyekeziwe. Ngiyabonga.',
+    editFail: 'Izinguquko azilondolozwanga.',
+    editNeedFields: 'Igama nendawo kuyadingeka.',
+    editWarn:
+      'Noma ubani angathuthukisa lo mbiko — lungisa indawo, usuku, incazelo, noma isithombe. Qiniseka ukuthi kuyiqiniso.',
+    lastSeenDateHint: 'Usuku oluqondile uma ulwazi — noma bhala “cishe ngo-March”, “iviki eledlule”, “angiqiniseki”.',
+    datePlaceholder: 'isib. 2024-03-12, cishe ngo-March, angiqiniseki',
+    photoReplace: 'Shintsha isithombe (okukhethekile)',
   },
   report: {
     title: 'Umbiko ongaziwa',

@@ -39,4 +39,17 @@ export type NewMissingInput = {
   contact_note: string | null
 }
 
+export type EditMissingInput = {
+  name: string
+  photoDataUrl?: string | null
+  gender: AffectedGender | null
+  age_note: string | null
+  last_seen_place: string
+  last_seen_date: string | null
+  grid_lat: number | null
+  grid_lng: number | null
+  description: string | null
+  contact_note: string | null
+}
+
 export const MISSING_VERIFY_THRESHOLD = 10

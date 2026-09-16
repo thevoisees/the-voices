@@ -6,6 +6,7 @@ import type {
   FoundOutcome,
   MissingPerson,
   NewMissingInput,
+  EditMissingInput,
 } from '../types-missing'
 import { MISSING_VERIFY_THRESHOLD } from '../types-missing'
 
@@ -247,6 +248,81 @@ export async function submitMissingPerson(
   }
 
   return { ok: true, person, shared }
+}
+
+export async function updateMissingPerson(
+  personId: string,
+  input: EditMissingInput,
+): Promise<{ ok: boolean; person?: MissingPerson; error?: string; shared?: boolean }> {
+  const name = input.name.trim()
+  const place = input.last_seen_place.trim()
+  if (!name || !place) {
+    return { ok: false, error: 'need_fields' }
+  }
+
+  const all = await fetchMissingPeople()
+  const target = all.find((p) => p.id === personId)
+  if (!target) return { ok: false, error: 'missing' }
+
+  let photo = target.photo
+  if (input.photoDataUrl && input.photoDataUrl.startsWith('data:')) {
+    const fromCloud = await uploadMissingPhotoToCloudinary(personId, input.photoDataUrl)
+    if (fromCloud) {
+      photo = fromCloud
+    } else {
+      const fromSb = await uploadPhotoToSupabase(personId, input.photoDataUrl)
+      if (fromSb) photo = fromSb
+      else photo = input.photoDataUrl
+    }
+  }
+
+  const next: MissingPerson = {
+    ...target,
+    name,
+    photo,
+    gender: input.gender,
+    age_note: input.age_note?.trim() || null,
+    last_seen_place: place,
+    last_seen_date: input.last_seen_date?.trim() || null,
+    grid_lat: input.grid_lat,
+    grid_lng: input.grid_lng,
+    description: input.description?.trim() || null,
+    contact_note: input.contact_note?.trim() || null,
+  }
+
+  const local = loadAllLocal()
+  const idx = local.findIndex((p) => p.id === personId)
+  if (idx >= 0) local[idx] = next
+  else local.unshift(next)
+  saveLocal(local)
+
+  let shared = false
+  if (supabaseConfigured && supabase) {
+    const { error } = await supabase
+      .from('missing_people')
+      .update({
+        name: next.name,
+        photo: next.photo,
+        gender: next.gender,
+        age_note: next.age_note,
+        last_seen_place: next.last_seen_place,
+        last_seen_date: next.last_seen_date,
+        grid_lat: next.grid_lat,
+        grid_lng: next.grid_lng,
+        description: next.description,
+        contact_note: next.contact_note,
+      })
+      .eq('id', personId)
+    if (!error) {
+      shared = true
+      next.source = 'live'
+      saveLocal(local.map((p) => (p.id === personId ? next : p)))
+    } else {
+      console.warn('missing_people update failed', error.message)
+    }
+  }
+
+  return { ok: true, person: next, shared }
 }
 
 export async function prepareMissingPhoto(file: File): Promise<string> {

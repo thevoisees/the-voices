@@ -354,6 +354,18 @@ export const en = {
     disputeThanks: 'Dispute recorded.',
     disputeAlready: 'You already disputed on this device.',
     disputeReverted: 'Enough disputes — status back to still missing.',
+    edit: 'Edit details',
+    editCancel: 'Cancel edit',
+    editSave: 'Save changes',
+    editSaving: 'Saving changes…',
+    editSuccess: 'Details updated. Thank you.',
+    editFail: 'Could not save those changes.',
+    editNeedFields: 'Name and place are required.',
+    editWarn:
+      'Anyone can improve this listing — correct place, date, description, or photo. Be careful and truthful.',
+    lastSeenDateHint: 'Exact date if you know it — or write “around March”, “last week”, “not sure”.',
+    datePlaceholder: 'e.g. 2024-03-12, around March, not sure',
+    photoReplace: 'Replace photo (optional)',
   },
   report: {
     title: 'Anonymous report',
