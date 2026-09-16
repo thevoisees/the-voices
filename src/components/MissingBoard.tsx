@@ -637,6 +637,12 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                       {shareDesc ? (
                         <p className="missing-share-desc">{shareDesc}</p>
                       ) : null}
+                      {selected.contact_note ? (
+                        <p className="missing-share-contact">
+                          <span>{t.missing.contact}</span>
+                          {selected.contact_note}
+                        </p>
+                      ) : null}
                     </div>
 
                     <footer className="missing-share-foot">
@@ -646,20 +652,12 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                   </div>
                 </article>
 
-                {shareShowExtra || selected.contact_note ? (
+                {shareShowExtra ? (
                   <dl className="missing-dl missing-dl-extra">
-                    {shareShowExtra ? (
-                      <div>
-                        <dt>{t.missing.description}</dt>
-                        <dd>{shareFullDesc}</dd>
-                      </div>
-                    ) : null}
-                    {selected.contact_note ? (
-                      <div>
-                        <dt>{t.missing.contact}</dt>
-                        <dd>{selected.contact_note}</dd>
-                      </div>
-                    ) : null}
+                    <div>
+                      <dt>{t.missing.description}</dt>
+                      <dd>{shareFullDesc}</dd>
+                    </div>
                   </dl>
                 ) : null}
 

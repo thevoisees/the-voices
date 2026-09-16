@@ -1991,6 +1991,41 @@ a {
   overflow: hidden;
 }
 
+.missing-share-contact {
+  margin: 0.5rem 0 0;
+  padding: 0.45rem 0.55rem;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--purple) 10%, #fff);
+  border: 1px solid color-mix(in srgb, var(--purple) 22%, transparent);
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--purple-deep);
+  word-break: break-word;
+}
+
+.missing-share-contact span {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.12rem;
+}
+
+.missing-share.tone-alive .missing-share-contact {
+  background: color-mix(in srgb, #0f766e 10%, #fff);
+  border-color: color-mix(in srgb, #0f766e 25%, transparent);
+  color: #0f766e;
+}
+
+.missing-share.tone-dead .missing-share-contact {
+  background: color-mix(in srgb, #57534e 10%, #fff);
+  border-color: color-mix(in srgb, #57534e 25%, transparent);
+  color: #44403c;
+}
+
 .missing-share-foot {
   display: flex;
   justify-content: space-between;
