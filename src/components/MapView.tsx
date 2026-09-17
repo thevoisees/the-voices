@@ -14,7 +14,9 @@ import { gridKey } from '../lib/grid'
 import { petitionsForCell, areaPetitions } from '../lib/petitions'
 import { flagReport, hasFlaggedReport } from '../lib/reports'
 import type { AreaPetition, CategoryId, Report } from '../types'
+import type { NeighborhoodForum, SearchCall } from '../types-community'
 import type { MissingPerson } from '../types-missing'
+import { CareStrip } from './CareStrip'
 import { CellDetail } from './CellDetail'
 import { MapGuide } from './MapGuide'
 import { MissingBoard } from './MissingBoard'
@@ -32,6 +34,10 @@ type Props = {
   onPetitionsChange: () => void
   missingPeople: MissingPerson[]
   onMissingChange: () => void
+  forums: NeighborhoodForum[]
+  searches: SearchCall[]
+  onCareChange: () => void
+  onOpenCommunity: () => void
   onGoReport?: () => void
   initialSpotKey?: string | null
   initialPetitionId?: string | null
@@ -89,6 +95,10 @@ export function MapView({
   onPetitionsChange,
   missingPeople,
   onMissingChange,
+  forums,
+  searches,
+  onCareChange,
+  onOpenCommunity,
   onGoReport,
   initialSpotKey,
   initialPetitionId,
@@ -335,6 +345,11 @@ export function MapView({
       {!pickMode && (
         <div className="map-side map-side-desktop">
           <MissingStrip people={missingPeople} onOpen={() => setMissingOpen(true)} />
+          <CareStrip
+            searches={searches}
+            forums={forums}
+            onOpen={onOpenCommunity}
+          />
           <PetitionStrip
             petitions={petitions}
             onOpen={() => setPetitionBoardOpen(true)}
@@ -361,6 +376,13 @@ export function MapView({
               >
                 {t.missing.stripTitle}
                 {missingActive > 0 ? ` (${missingActive})` : ''}
+              </button>
+              <button
+                type="button"
+                className="map-chrome-btn"
+                onClick={onOpenCommunity}
+              >
+                {t.community.stripTitle}
               </button>
               <button
                 type="button"
@@ -494,6 +516,7 @@ export function MapView({
             people={missingPeople}
             onClose={() => setMissingOpen(false)}
             onChange={onMissingChange}
+            onCareChange={onCareChange}
           />
         ) : null}
 

@@ -15,6 +15,7 @@ const PRIMARY: { id: Screen; icon: string }[] = [
 ]
 
 const MORE_ITEMS: { id: Screen; icon: string }[] = [
+  { id: 'community', icon: '◍' },
   { id: 'notebook', icon: '☰' },
   { id: 'about', icon: 'ⓘ' },
 ]

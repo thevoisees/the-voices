@@ -20,14 +20,17 @@ import {
   verifyFound,
 } from '../lib/missing'
 import type { AffectedGender } from '../types'
+import type { MissingSighting } from '../types-community'
 import type { FoundOutcome, MissingPerson } from '../types-missing'
 import { MISSING_VERIFY_THRESHOLD } from '../types-missing'
+import { MissingCarePanel } from './MissingCarePanel'
 import 'leaflet/dist/leaflet.css'
 
 type Props = {
   people: MissingPerson[]
   onClose: () => void
   onChange: () => void
+  onCareChange?: () => void
 }
 
 type Tab = 'list' | 'report'
@@ -87,13 +90,14 @@ function frameDescription(text: string | null | undefined) {
   return `${body.slice(0, FRAME_DESC_CHARS).replace(/\s+\S*$/, '').trim()}…`
 }
 
-export function MissingBoard({ people, onClose, onChange }: Props) {
+export function MissingBoard({ people, onClose, onChange, onCareChange }: Props) {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('list')
   const [selected, setSelected] = useState<MissingPerson | null>(null)
   const [filter, setFilter] = useState<'missing' | 'all' | 'found'>('missing')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState<string | null>(null)
+  const [latestSeen, setLatestSeen] = useState<MissingSighting | null>(null)
 
   const [name, setName] = useState('')
   const [photo, setPhoto] = useState<string | null>(null)
@@ -127,6 +131,7 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
     if (!selected) {
       setEditing(false)
       setEditPhoto(null)
+      setLatestSeen(null)
       return
     }
     if (editing) return
@@ -628,11 +633,18 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                         <p className="missing-share-meta">{shareMeta}</p>
                       ) : null}
                       <p className="missing-share-seen">
-                        <span>{t.missing.lastSeen}</span>
-                        {selected.last_seen_place}
-                        {selected.last_seen_date
-                          ? ` · ${selected.last_seen_date}`
-                          : ''}
+                        <span>
+                          {latestSeen
+                            ? t.missing.sightingLatest
+                            : t.missing.lastSeen}
+                        </span>
+                        {latestSeen
+                          ? `${latestSeen.place_text} · ${latestSeen.when_text}`
+                          : `${selected.last_seen_place}${
+                              selected.last_seen_date
+                                ? ` · ${selected.last_seen_date}`
+                                : ''
+                            }`}
                       </p>
                       {shareDesc ? (
                         <p className="missing-share-desc">{shareDesc}</p>
@@ -662,6 +674,12 @@ export function MissingBoard({ people, onClose, onChange }: Props) {
                 ) : null}
 
                 <div className="missing-detail-actions">
+                  <MissingCarePanel
+                    person={selected}
+                    onCareChange={onCareChange}
+                    onLatestSighting={setLatestSeen}
+                  />
+
                   <button type="button" className="secondary" onClick={startEdit}>
                     {t.missing.edit}
                   </button>

@@ -99,4 +99,11 @@ export interface NotebookEntry {
 
 export type Lang = 'en' | 'zu' | 'st'
 
-export type Screen = 'map' | 'petitions' | 'stats' | 'report' | 'notebook' | 'about'
+export type Screen =
+  | 'map'
+  | 'petitions'
+  | 'stats'
+  | 'report'
+  | 'notebook'
+  | 'about'
+  | 'community'

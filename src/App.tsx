@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { About } from './components/About'
+import { CommunityPage } from './components/CommunityPage'
 import { EmergencyStrip } from './components/EmergencyStrip'
 import { IntroGate } from './components/IntroGate'
 import { MapView } from './components/MapView'
@@ -11,10 +12,13 @@ import { Statistics } from './components/Statistics'
 import { getDict, I18nContext } from './i18n'
 import { fetchAnnouncements } from './lib/announcements'
 import { readDeepLink } from './lib/deeplink'
+import { fetchForums } from './lib/forums'
 import { fetchMissingPeople } from './lib/missing'
 import { fetchPetitions } from './lib/petitions'
 import { fetchReports } from './lib/reports'
+import { fetchSearches } from './lib/searches'
 import type { AreaPetition, CommunityAnnouncement, Lang, Report, Screen } from './types'
+import type { NeighborhoodForum, SearchCall } from './types-community'
 import type { MissingPerson } from './types-missing'
 
 const LANG_KEY = 'thevoices_lang'
@@ -31,6 +35,8 @@ export default function App() {
   const [petitions, setPetitions] = useState<AreaPetition[]>([])
   const [announcements, setAnnouncements] = useState<CommunityAnnouncement[]>([])
   const [missingPeople, setMissingPeople] = useState<MissingPerson[]>([])
+  const [forums, setForums] = useState<NeighborhoodForum[]>([])
+  const [searches, setSearches] = useState<SearchCall[]>([])
   const [loading, setLoading] = useState(true)
   const [deepLink] = useState(() => readDeepLink())
   const [focusSpotKey, setFocusSpotKey] = useState<string | null>(null)
@@ -57,18 +63,28 @@ export default function App() {
     setAnnouncements(a)
   }, [])
 
+  const refreshCare = useCallback(async () => {
+    const [f, s] = await Promise.all([fetchForums(), fetchSearches()])
+    setForums(f)
+    setSearches(s)
+  }, [])
+
   const refresh = useCallback(async () => {
     setLoading(true)
-    const [r, p, m, a] = await Promise.all([
+    const [r, p, m, a, f, s] = await Promise.all([
       fetchReports(),
       fetchPetitions(),
       fetchMissingPeople(),
       fetchAnnouncements(),
+      fetchForums(),
+      fetchSearches(),
     ])
     setReports(r)
     setPetitions(p)
     setMissingPeople(m)
     setAnnouncements(a)
+    setForums(f)
+    setSearches(s)
     setLoading(false)
   }, [])
 
@@ -103,6 +119,10 @@ export default function App() {
                   }}
                   missingPeople={missingPeople}
                   onMissingChange={() => void refreshMissing()}
+                  forums={forums}
+                  searches={searches}
+                  onCareChange={() => void refreshCare()}
+                  onOpenCommunity={() => setScreen('community')}
                   onGoReport={() => setScreen('report')}
                   initialSpotKey={deepLink.spotKey}
                   initialPetitionId={deepLink.petitionId}
@@ -120,6 +140,15 @@ export default function App() {
                   setFocusSpotKey(key)
                   setScreen('map')
                 }}
+              />
+            )}
+            {screen === 'community' && (
+              <CommunityPage
+                forums={forums}
+                searches={searches}
+                missingPeople={missingPeople}
+                onForumsChange={() => void refreshCare()}
+                onSearchesChange={() => void refreshCare()}
               />
             )}
             {screen === 'report' && (
